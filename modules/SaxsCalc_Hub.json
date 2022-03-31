@@ -1,0 +1,1632 @@
+{
+    "moduleid" : "SaxsCalc_Hub"
+    ,"label"    : "SaxsCalc_Hub"
+    ,"executable"   : "saxscalchub"
+    ,"submitpolicy" : "all"
+#    ,"uniquedir" : "true"
+#    ,"center" : "true"
+    ,"centeroutput" : "true"
+    ,"notify" : "email"
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "label_0"
+            ,"type"      : "label"
+            ,"colspan"   : 4
+            ,"default"   : "header4"
+            ,"label"     : "Multi SAXS Tool *For Academic Use Only*"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "runname"
+            ,"label"      : "Run name "
+            ,"type"       : "text"
+            ,"default"    : "run_0"
+            ,"required"   : "true"
+            ,"help"       : "results will be placed in a folder named here"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "pdb"
+            ,"label"      : "Input PDB"
+# need to force copy over
+#            ,"type"       : "lrfile"
+            ,"type"       : "file"
+            ,"required"   : "true"
+            ,"repeater"   : "true"
+            ,"help"       : "PDB input file for the complex (required)."
+        }
+        ,{
+            "role"       : "input"
+            ,"id"       : "multi_model_pdb"
+            ,"label"    : "Multi model pdb"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Choose only if input pdb has multi-frames."
+            ,"repeater"   : "true"
+            ,"norow"      : "false"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "choose_all_models"
+            ,"label"    : "Choose all models"
+            ,"type"     : "checkbox"
+            ,"default"    : "true"
+            ,"help"       : "If unchecked, only first MODEL will be calculated except Pepsi-SAXS"
+            ,"repeat"     : "multi_model_pdb"
+#            ,"norow"      : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"         : "set_experimental_curve"
+            ,"label"      : "Experimental curve"
+            ,"repeater"   : "true"
+            ,"type"       : "checkbox"
+            ,"help"       : "Experimental curve (Reference data from experiment or high level theory, required for Fit and Scan mode)"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "experimental_curve"
+            ,"label"      : "Input experimental curve"
+            ,"type"       : "lrfile"
+            ,"type"       : "file"
+            ,"repeat"     : "set_experimental_curve"
+            ,"repeater"   : "true"
+            ,"help"       : "Experimental curve with q, Iq, and error of Iq"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"       : "angular_units"
+            ,"label"    : "Angular units" 
+            ,"type"     : "listbox"
+            ,"help"       : "Angular units of experimental data. Default is 1/A"
+            ,"values"     : "q = 1/&#8491;, s = 4&pi; sin(&theta;)/&lambda;~1~q = 1/nm, s = 4&pi; sin(&theta;)/&lambda;~2~q = 1/&#8491;, s = 2sin(&theta;)/&lambda;~3~q = 1/nm, s = 2sin(&theta;)/&lambda;~4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"         : "qmin"
+            ,"label"      : "Qmin"
+            ,"type"       : "float"
+            ,"default"    : 0.001
+            ,"min"        : 0.0
+            ,"max"        : 1.0
+            ,"step"       : 0.001
+            ,"help"       : "Minimum scattering vector in inverse angstroms. If Qmin is less than the experimental minimum q, Qmin value will be overwritten by the experimental value."
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "qmax"
+            ,"label"      : "Qmax"
+            ,"type"       : "float"
+            ,"default"    : 0.5
+            ,"min"        : 0.0
+            ,"max"        : 1.0
+            ,"step"       : 0.001
+            ,"help"       : "Maximum scattering vector in inverse angstroms (maximum = 1.0 1/A). If Qmax is greater than the experimental maximum q, Qmax value will be overwitten by the experimental value."
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "number_of_points"
+            ,"label"      : "Number of q points"
+            ,"type"       : "integer"
+            ,"default"    : 501
+            ,"min"        : 1
+            ,"max"        : 5000
+            ,"step"       : 1
+            ,"help"       : "Number of points in the theoretical curve (max = 5000) including q = 0. Automatically modified if an experimental curve exists"
+        }
+        ,{   "role"       : "input"
+            ,"id"        : "select_all"
+            ,"label"     : "Select All Programs"
+            ,"type"      : "checkbox"
+            ,"checked"   : "true"
+            ,"repeater"  : "true"
+            ,"colspan"   : 4 
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"       : "Implicit_water_models"
+            ,"label"    : "Implicit water models"
+            ,"type"     : "label"
+            ,"repeat"     : "select_all"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+
+        ,{
+            "role"       : "input"
+            ,"id"         : "CRYSOL"
+            ,"label"      : "CRYSOL[<a href=https://www.embl-hamburg.de/biosaxs/crysol.html target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "true"
+            ,"repeat"     : "select_all"
+            ,"repeater"   : "true"
+            ,"help"       : "If unchecked, CRYSOL will be excluded"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "FoXS"
+            ,"label"      : "FoXS[<a href=https://modbase.compbio.ucsf.edu/foxs/about.html target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "true"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+            ,"help"       : "If unchecked, FoXS will be excluded"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "Pepsi_SAXS"
+            ,"label"      : "Pepsi-SAXS[<a href=https://team.inria.fr/nano-d/software/pepsi-saxs target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "true"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+            ,"help"       : "If unchecked, Pepsi_SAXS will be excluded"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "SASTBX"
+            ,"label"      : "SASTBX[<a href=https://sastbx-document.readthedocs.io/en/latest target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "false"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+            ,"help"       : "If unchecked, SASTBX will be excluded"
+        }        
+        ,{
+            "role"       : "input"
+            ,"id"         : "sascalc_hub"
+            ,"label"      : "SasCalc[<a href=https://www.sciencedirect.com/science/article/pii/S0010465511003286 target=_blank>1</a>],[<a href=https://sassie-jetstream.genapp.rocks/sassie2/docs/calculate/sascalc/sascalc.html target=_blank>2</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "false"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+            ,"help"       : "Not supported yet"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "SoftWAXS"
+            ,"label"      : "SoftWAXS[<a href=https://bitbucket.org/bardhanlab/softwaxs target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "false"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+            ,"help"       : "Not supported yet"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "AXES"
+            ,"label"      : "AXES[<a href=https://spin.niddk.nih.gov/bax/nmrserver/saxs1/ target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "false"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+            ,"help"       : "Not supported yet"
+        }
+        ,{  
+            "role"       : "input"
+            ,"id"       : "Explicit_water_models"
+            ,"label"    : "Explicit water models"
+            ,"type"     : "label"
+            ,"repeat"     : "select_all"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"         : "WAXSiS"
+            ,"label"      : "WAXSiS[<a href=http://waxsis.uni-goettingen.de target=_blank>1</a>]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "false"
+            ,"repeater"   : "true"
+            ,"repeat"     : "select_all"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"       : "advanced_options"
+            ,"type"     : "checkbox"
+            ,"label"    : "Advanced options"
+            ,"checked"  : "false"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+            ,"repeater" : "true"
+            ,"help"       : "check to setup advanced options of selected program(s)"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "debug_msg"
+            ,"label"    : "Debugging mode"
+            ,"type"     : "checkbox"
+            ,"checked"    : "false"
+            ,"help"       : "Check to activate debugging messages"
+          }
+##################################################################################
+####     Common options for fit mode
+##################################################################################
+#        ,{
+#            "role"       : "input"
+#            ,"id"         : "explicit_water"
+#            ,"label"      : "Explicit water model [Not supported yet]"
+#            ,"type"       : "checkbox"
+#            ,"checked"    : "false"
+#            ,"repeat"     : "advanced_options"
+#            ,"help"       : "Explicit hydration for SAXS calculation"
+#        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "explicit_hydrogen"
+            ,"label"      : "Use explicit hydrogens [only CRYSOL, FoXS, Pepsi-SAXS, WAXSiS]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "false"
+            ,"repeat"     : "advanced_options"
+            ,"help"       : "Explicit hydrogens for SAXS calculation.<br>Note WAXSiS always takes into account explicit H atoms regardless of this option."
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "constant_subtractions"
+            ,"label"      : "Automatic background subtractions [only CRYSOL, Pepsi-SAXS, WAXSiS]"
+            ,"type"       : "checkbox"
+            ,"checked"    : "true"
+            ,"repeat"     : "advanced_options"
+            ,"help"       : "Automatically substract a constant factor if experimental data contains a systematic error. <br>For FoXS, put q value using backgrond_q after clicking background subtrations at FoXS specific option. <br>For WAXSiS, "
+        }
+        ,{
+            "role"       : "input"
+            ,"id"       : "solvent_density"
+            ,"label"    : "solvent density[Only CRYSOL, WAXSiS]"
+            ,"type"     : "float"
+            ,"default"    : 0.334
+            ,"step"       : 0.001
+            ,"min"        : 0.0
+            ,"max"        : 0.5
+            ,"help"       : "Solvent density (e/&#8491;&sup3;). Default value is the electron density of pure water."
+            ,"repeat"     : "advanced_options"
+          }
+##################################################################################
+####     Full Options for CRYSOL
+##################################################################################
+        ,{  
+            "role"       : "input"
+            ,"id"       : "fulloptions_CRYSOL"
+            ,"label"    : "CRYSOL specific"
+            ,"type"     : "label"
+            ,"checked"    : "false"
+            ,"help"       : "Check to modify CRYSOL options"
+            ,"repeat"     : "advanced_options"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "set_chain_id"
+            ,"label"    : "chain identifier"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Click to speicify chain(s) in input pdb for calculation"
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "chain_id"
+            ,"label"    : "chain identifier"
+            ,"type"     : "text"
+            ,"default"    : "A"
+            ,"help"       : "By default, all chains are processed. If there is _ before chain identifier, all chains except for specified will be processed."
+            ,"repeat"     : "set_chain_id"
+          }
+       ,{
+            "role"       : "input"
+            ,"id"       : "maxharmonics"
+            ,"label"    : "maximum number of harmonics"
+            ,"type"     : "integer"
+            ,"default"    : 15
+            ,"min"        : 1
+            ,"max"        : 50
+            ,"step"       : 1
+            ,"help"       : "Choose integer between 1 and 50"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fibonacci_grid"
+            ,"label"    : "fibonacci grid"
+            ,"type"     : "integer"
+            ,"default"    : 17
+            ,"min"        : 10
+            ,"max"        : 18
+            ,"step"       : 1
+            ,"help"       : "Choose integer between 10 and 18"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "contrast_hydration_mode"
+            ,"label"    : "contrast of hydration shell (Dro)"
+            ,"type"     : "listbox"
+            ,"values"     : "Crysol Default~1~Fix Value~2~Edit Range~3~Scan(abs.)~4~Scan(ratio)~5"
+            ,"help"       : "Crysol Default: Use values defined by CRYSOL (Calc, Fit, and Scan modes) <br>Fix Value: Fix to user defined value (Calc, Fit, and Scan modes) <br>Edit Range: Assign low and high value (Fit and Scan modes Only) <br>Scan(abs.): Define range of absolute values to perform grid-searching of &Chi;&sup2; (slow) <br>Scan(ratio): Define a range of values relative to theoretical prediction (slow)"
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fix_contrast_hydration"
+            ,"label"    : "value"
+            ,"type"     : "float"
+            ,"default"    : 0.003
+            ,"help"       : "Fix contrast of hydration shell in unit of (e/&#8491;^3)"
+            ,"repeat"     : "contrast_hydration_mode:2"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fit_contrast_hydration_low"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 0.00
+            ,"step"       : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum of contrast of hydration shell to fit"
+            ,"repeat"     : "contrast_hydration_mode:3"
+          }
+        ,{  
+            "role"       : "input"
+            ,"id"       : "fit_contrast_hydration_high"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 0.075
+            ,"step"       : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum of contrast of hydration shell to fit"
+            ,"repeat"     : "contrast_hydration_mode:3"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_low"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 0.00
+            ,"step"       : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum of contrast of hydration shell to scan"
+            ,"repeat"     : "contrast_hydration_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_high"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 0.075
+            ,"step"       : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum of contrast of hydration shell to scan"
+            ,"repeat"     : "contrast_hydration_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_points"
+            ,"label"    : "points"
+            ,"type"     : "integer"
+            ,"default"    : 2
+            ,"step"        : 1
+            ,"min"        : 2
+            ,"max"        : 10000
+            ,"help"       : "Number of points to scan greater than 2"
+            ,"repeat"     : "contrast_hydration_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_interval"
+            ,"label"    : "interval"
+            ,"readonly" : "true"
+            ,"type"     : "float"
+            ,"default"    : 0.001
+            ,"step"        : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"calc"       : "(scan_contrast_hydration_high-scan_contrast_hydration_low)/(scan_contrast_hydration_points-1)"
+            ,"help"       : "interval"
+            ,"repeat"     : "contrast_hydration_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_low_ratio"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 0.0
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum ratio of contrast of hydration shell compared to theoretical prediction"
+            ,"repeat"     : "contrast_hydration_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_high_ratio"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 8.0
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum ratio of contrast of hydration shell compared to theoretical prediction"
+            ,"repeat"     : "contrast_hydration_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_points_ratio"
+            ,"label"    : "points"
+            ,"type"     : "integer"
+            ,"default"    : 2
+            ,"step"        : 1
+            ,"min"        : 2
+            ,"max"        : 10000
+            ,"help"       : "Number of points to scan greater than 2"
+            ,"repeat"     : "contrast_hydration_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_contrast_hydration_interval_ratio"
+            ,"label"    : "interval"
+            ,"readonly" : "true"
+            ,"type"     : "float"
+            ,"default"    : 8.0
+            ,"step"        : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"calc"       : "(scan_contrast_hydration_high_ratio-scan_contrast_hydration_low_ratio)/(scan_contrast_hydration_points_ratio-1)"
+            ,"help"       : "interval"
+            ,"repeat"     : "contrast_hydration_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "atomic_radius_mode"
+            ,"label"    : "atomic radius (Ra)"
+            ,"type"     : "listbox"
+            ,"values"     : "Crysol Default~1~Fix Value~2~Edit Range~3~Scan(abs.)~4~Scan(ratio)~5"
+            ,"help"       : "Crysol Default: Use values defined by CRYSOL (Calc, Fit, and Scan modes) <br>Fix Value: Fix to user defined value (Calc, Fit, and Scan modes) <br>Edit Range: Assign low and high value (Fit and Scan modes Only) <br>Scan(abs.): Define range of absolute values to perform grid-searching of &Chi;&sup2; (slow) <br>Scan(ratio): Define a range of values relative to theoretical prediction (slow)" 
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fix_atomic_radius"
+            ,"label"    : "value"
+            ,"type"     : "float"
+            ,"default"    : 1.3
+            ,"step"       : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Fix atomic radius in unit of (&#8491;)"
+            ,"repeat"     : "atomic_radius_mode:2"
+          }
+        ,{  
+            "role"       : "input"
+            ,"id"       : "fit_atomic_radius_low"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 1.20
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum of atomic radius to fit" 
+            ,"repeat"     : "atomic_radius_mode:3"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "fit_atomic_radius_high"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 1.80
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum of atomic radius to fit" 
+            ,"repeat"     : "atomic_radius_mode:3"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_low"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 1.20
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum of atomic radius to scan"
+            ,"repeat"     : "atomic_radius_mode:4"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_high"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 1.80
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum of atomic radius to scan"
+            ,"repeat"     : "atomic_radius_mode:4"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_points"
+            ,"label"    : "points"
+            ,"type"     : "integer"
+            ,"default"    : 2
+            ,"step"        : 1
+            ,"min"        : 2
+            ,"max"        : 10000
+            ,"help"       : "Number of points to scan greater than 2"
+            ,"repeat"     : "atomic_radius_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_interval"
+            ,"label"    : "interval"
+            ,"readonly" : "true"
+            ,"type"     : "float"
+            ,"default"    : 0.6
+            ,"step"        : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"calc"       : "(scan_atomic_radius_high-scan_atomic_radius_low)/(scan_atomic_radius_points-1)"
+            ,"help"       : "interval"
+            ,"repeat"     : "atomic_radius_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_low_ratio"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 0.8
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum of atomic radius to scan"
+            ,"repeat"     : "atomic_radius_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_high_ratio"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 1.2
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum ratio of atomic radius compared to theoretical prediction"
+            ,"repeat"     : "atomic_radius_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_points_ratio"
+            ,"label"    : "points"
+            ,"type"     : "integer"
+            ,"default"    : 2
+            ,"step"        : 1
+            ,"min"        : 2
+            ,"max"        : 10000
+            ,"help"       : "Number of points to scan greater than 2"
+            ,"repeat"     : "atomic_radius_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_atomic_radius_interval_ratio"
+            ,"label"    : "interval"
+            ,"readonly" : "true"
+            ,"type"     : "float"
+            ,"default"    : 0.4
+            ,"step"        : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"calc"       : "(scan_atomic_radius_high_ratio-scan_atomic_radius_low_ratio)/(scan_atomic_radius_points_ratio-1)"
+            ,"help"       : "interval"
+            ,"repeat"     : "atomic_radius_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "excluded_volume_mode"
+            ,"label"    : "excluded volume (Vol)"
+            ,"type"     : "listbox"
+            ,"values"     : "Crysol Default~1~Fix Value~2~Edit Range~3~Scan(abs.)~4~Scan(ratio)~5"
+            ,"help"       : "Crysol Default: Use values defined by CRYSOL (Calc, Fit, and Scan modes) <br>Fix Value: Fix to user defined value (Calc, Fit, and Scan modes) <br>Edit Range: Assign low and high value (Fit and Scan modes Only) <br>Scan(abs.): Define range of absolute values to perform grid-searching of &Chi;&sup2; (slow) <br>Scan(ratio): Define a range of values relative to theoretical prediction (slow)"
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fix_excluded_volume"
+            ,"label"    : "value"
+            ,"type"     : "float"
+            ,"default"    : 100000.0 
+            ,"step"       : 0.001
+            ,"min"        : 0.00
+            ,"max"        : 10000000.0
+            ,"help"       : "Fix excluded volume in unit of (&#8491;^3)"
+            ,"repeat"     : "excluded_volume_mode:2"
+          }
+        ,{  
+            "role"       : "input"
+            ,"id"       : "fit_excluded_volume_low"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 100000.0
+            ,"step"       : 1.0
+            ,"min"        : 0.00
+            ,"max"        : 10000000.0
+            ,"help"       : "Minimum of excluded volume to fit"
+            ,"repeat"     : "excluded_volume_mode:3"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "fit_excluded_volume_high"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 200000.0
+            ,"step"       : 1.0
+            ,"min"        : 0.00
+            ,"max"        : 10000000.0
+            ,"help"       : "Maximum of excluded volume to fit"
+            ,"repeat"     : "excluded_volume_mode:3"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_low"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 100000.0
+            ,"step"       : 1.0
+            ,"min"        : 0.00
+            ,"max"        : 10000000.0
+            ,"help"       : "Minimum of excluded volume to scan"
+            ,"repeat"     : "excluded_volume_mode:4"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_high"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 200000.0
+            ,"step"       : 1.0
+            ,"min"        : 0.00
+            ,"max"        : 10000000.0
+            ,"help"       : "Maximum of excluded volume to scan"
+            ,"repeat"     : "excluded_volume_mode:4"
+          } 
+        ,{  
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_points"
+            ,"label"    : "points"
+            ,"type"     : "integer"
+            ,"default"    : 2
+            ,"step"        : 1
+            ,"min"        : 2
+            ,"max"        : 10000
+            ,"help"       : "Number of points to scan greater than 2"
+            ,"repeat"     : "excluded_volume_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_interval"
+            ,"label"    : "interval"
+            ,"readonly" : "true"
+            ,"type"     : "float"
+            ,"default"    : 100000.0
+            ,"step"        : 1.0
+            ,"min"        : 0.00
+            ,"max"        : 1000000.0
+            ,"calc"       : "(scan_excluded_volume_high-scan_excluded_volume_low)/(scan_excluded_volume_points-1)"
+            ,"help"       : "interval"
+            ,"repeat"     : "excluded_volume_mode:4"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_low_ratio"
+            ,"label"    : "min"
+            ,"type"     : "float"
+            ,"default"    : 0.8 
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Minimum ratio of excluded volume to scan compared to theoretical prediction"
+            ,"repeat"     : "excluded_volume_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_high_ratio"
+            ,"label"    : "max"
+            ,"type"     : "float"
+            ,"default"    : 1.2
+            ,"step"       : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"help"       : "Maximum ratio of excluded volume to scan compared to theroretical prediction"
+            ,"repeat"     : "excluded_volume_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_points_ratio"
+            ,"label"    : "points"
+            ,"type"     : "integer"
+            ,"default"    : 2
+            ,"step"        : 1
+            ,"min"        : 2
+            ,"max"        : 10000
+            ,"help"       : "Number of points to scan greater than 2"
+            ,"repeat"     : "excluded_volume_mode:5"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "scan_excluded_volume_interval_ratio"
+            ,"label"    : "interval"
+            ,"readonly" : "true"
+            ,"type"     : "float"
+            ,"default"    : 0.4
+            ,"step"        : 0.01
+            ,"min"        : 0.00
+            ,"max"        : 100.0
+            ,"calc"       : "(scan_excluded_volume_high_ratio-scan_excluded_volume_low_ratio)/(scan_excluded_volume_points_ratio-1)"
+            ,"help"       : "interval"
+            ,"repeat"     : "excluded_volume_mode:5"
+          }
+##################################################################################
+####     Full Options for FoXS
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_FoXS"
+            ,"label"    : "FoXS specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify FoXS options"
+            ,"repeat"     : "advanced_options"
+#            ,"repeater"   : "true"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "score_log"
+            ,"label"    : "score log"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "use log(intensity) in fitting and scoring"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fast_ca"
+            ,"label"    : "coarse grained (CA only)"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "fast coarse grained calculation using CA atoms only"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "offset_FoXS"
+            ,"label"    : "use offset"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "use offset in fitting"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "partial_profile_FoXS"
+            ,"label"    : "partial profile"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "write partial profile file"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "set_constant_subtractions_FoXS"
+            ,"label"    : "background subtractions"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "background adjustment of experimental data, not used by default."
+            ,"repeat"     : "advanced_options"
+            ,"repeater"  : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "constant_subtractions_FoXS"    
+            ,"label"    : "background_q"
+            ,"type"     : "float"
+            ,"default"    : 0.2
+            ,"min"        : 0.0
+            ,"max"        : 10.0
+            ,"step"       : 0.01
+            ,"help"       : "if enabled, recommended value q =  0.2 1//&#8491;"
+            ,"repeat"     : "set_constant_subtractions_FoXS"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "min_c1"
+            ,"label"    : "min c1"
+            ,"type"     : "float"
+            ,"default"    : 0.99
+            ,"step"       : 0.01
+            ,"help"       : "minimum c1 value"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "max_c1"
+            ,"label"    : "max c1"
+            ,"type"     : "float"
+            ,"default"    : 1.05
+            ,"step"       : 0.01
+            ,"help"       : "maximum c1 value"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "min_c2"
+            ,"label"    : "min c2"
+            ,"type"     : "float"
+            ,"default"    : -2.00
+            ,"step"       : 0.01
+            ,"help"       : "minimum c2 value"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "max_c2"
+            ,"label"    : "max c2"
+            ,"type"     : "float"
+            ,"default"    : 4.00
+            ,"step"        : 0.01
+            ,"help"       : "maximum c2 value"
+            ,"repeat"     : "advanced_options"
+          }
+##################################################################################
+####     Full Options for Pepsi-SAXS
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_Pepsi_SAXS"
+            ,"label"    : "Pepsi_SAXS specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify Pepsi-SAXS options"
+            ,"repeat"     : "advanced_options"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+#            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "log_json"
+            ,"label"    : "log json"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Output the log file in the JSON format"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "negative_contrast"
+            ,"label"    : "negative contrast"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Allowing negative contrast of the hydration shell upon fitting"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fast_hydration"
+            ,"label"    : "fast hydration"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "A coarser representation of the hydration shell"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "no_smearing"
+            ,"label"    : "no smearing"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Disables the data smearing"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "fluc"
+            ,"label"    : "enable fluctuation"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "set_expansion_order"
+            ,"label"    : "set_expansion order"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Set the expansion order, default is chosen adaptively"
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "expansion_order"
+            ,"label"    : "expansion order"
+            ,"type"     : "integer"
+            ,"default"    : 15
+            ,"min"        : 1
+            ,"max"        : 100
+            ,"step"       : 1
+            ,"help"       : "Number of coefficients in the expansion"
+            ,"repeat"     : "set_expansion_order"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "set_dro"
+            ,"label"    : "set hydration shell contrast"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Hydration shell contrast (in % of the bulk value), default is 5%"
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "dro"
+            ,"label"    : "hydration shell contrast"
+            ,"type"     : "float"
+            ,"default"    : 5.0
+            ,"step"       : 0.1
+            ,"min"        : 0.0
+            ,"max"        : 1000.0
+            ,"help"       : "Hydration shell contrast (in % of the bulk value), default is 5%"
+            ,"repeat"     : "set_dro"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "set_modes"
+            ,"label"    : "low-frequency modes"
+            ,"type"     : "checkbox"
+            ,"default"    : "false"
+            ,"help"       : "Set Number of low-frequency modes"
+            ,"repeat"     : "advanced_options"
+            ,"repeater"   : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "modes"
+            ,"label"    : "number of modes"
+            ,"type"     : "integer"
+            ,"default"    : 5
+            ,"min"        : 1
+            ,"max"        : 10000 
+            ,"step"       : 1
+            ,"help"       : "Integer between 5 and 75"
+            ,"repeat"     : "set_modes"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "cov_scaling"
+            ,"label"    : "scaling of covalent interactions"
+            ,"type"     : "float"
+            ,"default"    : 1.0
+            ,"step"       : 0.1
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "cutoff"
+            ,"label"    : "Interactions cutoff distance"
+            ,"type"     : "float"
+            ,"default"    : 5.0
+            ,"step"      : 0.1
+            ,"min"        : 0.1
+            ,"max"        : 100.0
+            ,"repeat"     : "advanced_options"
+          }
+
+
+#################################################################################
+####     Full Options for SASTBX
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_SASTBX"
+            ,"label"    : "SASTBX specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify SASTBX options"
+            ,"repeat"     : "advanced_options"
+#            ,"repeater"   : "true"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+#        ,{
+#            "role"       : "input"
+#            ,"id"       : "qmin"
+#            ,"label"    : "minimum q"
+#            ,"type"     : "float"
+#            ,"default"    : 0.0
+#            ,"min"        : 0.0
+#            ,"step" : 0.01
+#            ,"repeat"     : "advanced_options"
+#          }
+##################################################################################
+####     Full Options for WAXSiS
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_WAXSiS"
+            ,"label"    : "WAXSiS specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify WAXSiS options"
+            ,"repeat"     : "advanced_options"
+#            ,"repeater"   : "true"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "buffer_subtractions"
+            ,"label"    : "buffer subtraction"
+            ,"type"     : "listbox"
+            ,"help"       : "Select the buffer subtraction method in theoretical curve"
+            ,"values"     : "Total buffer scattering subtracted~total~Buffer scattering reduced by solute volume~solute_reduced"
+            ,"repeat"     : "advanced_options"
+         }
+        ,{
+            "role"       : "input"
+            ,"id"       : "ligands"
+            ,"label"    : "ligands & crystallization agents"
+            ,"type"     : "listbox"
+            ,"help"       : "Select method to treat ligands and crystallization agents in input pdb file"
+            ,"values"     : "Keep ligands, try to remove crystallization agents~remove_cryst_agents~Keep all~keep_all~Remove all~remove_all"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "replace_selen"
+            ,"label"    : "selenomethionine"
+            ,"type"     : "listbox"
+            ,"help"       : "Replace selenomethionine with methionine? "
+            ,"values"     : "yes~yes~no~no"
+            ,"repeat"     : "advanced_options"
+          }  
+        ,{
+            "role"       : "input"
+            ,"id"       : "convergence"
+            ,"label"    : "convergence[<a href=http://waxsis.uni-goettingen.de/help/#16 target=_blank>link</a>]"
+            ,"type"     : "listbox"
+            ,"help"       : "Control the number of MD simulation frames to achieve a converged theoretical curve.<br>Click the link for more info."
+            ,"values"     : "normal~normal~quick~quick~thorough~thorough~test~test"
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "envelope_dist"
+            ,"label"    : "envelope distance"
+            ,"type"     : "float"
+            ,"default"    : 7.0
+            ,"step"       : 0.01
+            ,"min"        : 3.0
+            ,"max"        : 8.0
+            ,"help"       : "Specify the envelope distance (&#8491;) from 3 to 8."
+            ,"repeat"     : "advanced_options"
+          }
+        ,{
+            "role"       : "input"
+            ,"id"       : "random_seed"
+            ,"label"    : "random seed"
+            ,"type"     : "listbox"
+            ,"help"       : "Use new random seed for initial velocities?<br>Yes(Results vary slightly)<br>No(Results are reproducible)"
+            ,"values"     : "yes~yes~no~no"
+            ,"repeat"     : "advanced_options"
+          }
+##################################################################################
+####     Full Options for SasCalc
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_SasCalc"
+            ,"label"    : "SasCalc specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify SasCalc options"
+            ,"repeat"     : "advanced_options"
+#            ,"repeater"   : "true"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+##################################################################################
+####     Full Options for SoftWAXS
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_SoftWAXS"
+            ,"label"    : "SoftWAXS specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify SoftWAXS options"
+            ,"repeat"     : "advanced_options"
+#            ,"repeater"   : "true"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+##################################################################################
+####     Full Options for AXES
+##################################################################################
+        ,{
+            "role"       : "input"
+            ,"id"       : "fulloptions_AXES"
+            ,"label"    : "AXES specific"
+            ,"type"     : "label"
+#            ,"checked"    : "false"
+            ,"help"       : "Check to modify AXES options"
+            ,"repeat"     : "advanced_options"
+#            ,"repeater"   : "true"
+            ,"prehline"  : "true"
+            ,"posthline"  : "true"
+          }
+
+##################################################################################
+####     Set Plotly here
+##################################################################################
+        ,{
+            "role"       : "output"
+            ,"id"         : "log_multisaxshub"
+            ,"label"      : "log of multisaxshub run: "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "log_multisaxshub_2"
+            ,"label"      : "log of multisaxshub run (detail): "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_ALL"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from ALL Seletions"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_CRYSOL"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from CRYSOL"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "chi2_2D_CRYSOL"
+            ,"type"      : "plot3d"
+            ,"label"     : "2-D &Chi; map(s) from CRYSOL scanning mode"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "chi2_1D_CRYSOL"
+            ,"type"      : "plotly"
+            ,"label"     : "1-D &Chi; scan from CRYSOL scanning mode"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_FoXS"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from FoXS"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_Pepsi_SAXS"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from Pepsi-SAXS"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_SASTBX"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from SASTBX"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_SasCalc"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from SasCalc"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_WAXSiS"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from WAXSiS"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"        : "iq_SoftWAXS"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from SoftWAXS"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"        : "iq_AXES"
+            ,"type"      : "plotly"
+            ,"label"     : "Iq from AXES"
+        }
+##################################################################################
+####     Set output files for all methods
+##################################################################################
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_zip"
+            ,"label"      : "All output files (zip) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+#        ,{
+#            "role"       : "output"
+#            ,"id"         : "log_multisaxshub"
+#            ,"label"      : "log of multisaxshub run: "
+#            ,"type"       : "file"
+#            ,"help"       : "Right click to download"
+#        }
+#        ,{
+#            "role"       : "output"
+#            ,"id"         : "log_multisaxshub_2"
+#            ,"label"      : "log of multisaxshub run (detail): "
+#            ,"type"       : "file"
+#            ,"help"       : "Right click to download"
+#        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL"
+            ,"label"      : "<br>CRYSOL output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_log"
+            ,"label"      : "log :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }        
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_fit"
+            ,"label"      : "fit I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_sav"
+            ,"label"      : "sav file (optional) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_flm"
+            ,"label"      : "flm file (optional) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_alm"
+            ,"label"      : "alm file (optional) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_int"
+            ,"label"      : "int file (optional) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_CRYSOL_scan"
+            ,"label"      : "&Chi;&sup2 scan file (optional): "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+#        ,{
+#            "role"       : "output"
+#            ,"id"         : "outfile_CRYSOL_zip"
+#            ,"label"      : "chi^2 data file"
+#            ,"type"       : "file"
+#            ,"help"       : "Right click to download"
+#        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_FoXS"
+            ,"label"      : "<br>FoXS output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_FoXS_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_FoXS_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_FoXS_dat1"
+            ,"label"      : "predicted I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_FoXS_dat2"
+            ,"label"      : "data I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_FoXS_fit"
+            ,"label"      : "fit I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_Pepsi_SAXS"
+            ,"label"      : "<br>Pepsi_SAXS output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_Pepsi_SAXS_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_Pepsi_SAXS_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_Pepsi_SAXS_log"
+            ,"label"      : "JSON log : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_Pepsi_SAXS_out"
+            ,"label"      : "predicted I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_Pepsi_SAXS_fit"
+            ,"label"      : "fit I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SASTBX_hub"
+            ,"label"      : "<br>SASTBX output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SASTBX_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SASTBX_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SASTBX_iq"
+            ,"label"      : "predicted I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SASTBX_json"
+            ,"label"      : "I(q) in JSON : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SASTBX_fit"
+            ,"label"      : "fit I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_sascalc_hub"
+            ,"label"      : "<br>SasCalc output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_sascalc_hub_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_sascalc_hub_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_sascalc_hub_dat"
+            ,"label"      : "I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }        
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_WAXSiS"
+            ,"label"      : "<br>WAXSiS output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_WAXSiS_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_WAXSiS_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_WAXSiS_calc"
+            ,"label"      : "predicted I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_WAXSiS_fit"
+            ,"label"      : "fit I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SoftWAXS"
+            ,"label"      : "<br>SoftWAXS output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_SoftWAXS_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_SoftWAXS_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_SoftWAXS_dat"
+            ,"label"      : "I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_AXES"
+            ,"label"      : "<br>AXES output files "
+            ,"default"   : "header6"
+            ,"type"       : "label"
+            ,"prehline"  : "false"
+            ,"posthline"  : "false"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_AXES_stderr"
+            ,"label"      : "stderr :  "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{  
+            "role"       : "output"
+            ,"id"         : "outfile_AXES_stdout"
+            ,"label"      : "stdout : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+        ,{
+            "role"       : "output"
+            ,"id"         : "outfile_AXES_dat"
+            ,"label"      : "I(q) : "
+            ,"type"       : "file"
+            ,"help"       : "Right click to download"
+        }
+    ]
+}

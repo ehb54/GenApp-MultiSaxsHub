@@ -1,0 +1,211 @@
+#!/bin/bash
+
+#
+# This script is used at the GWDG to create a WAXSiS job. It taks a PDB file as input, writes the WAXSiS job file called "unset.job"
+# and submits the job to the LSF queuing system.
+# 
+# Typical call is:
+#
+# pdb=/path/to/lysozyme.pdb
+# waxsis-job.sh -nt 8 -jobname Waxsis_Lysozyme  -jobid unset -s $pdb -convergence normal
+#
+# Most useful options:
+#   -convergence thorough
+#   -nt                    number of threads (MPI ranks)
+#   -solvent_density       solvent density in e/nm3 (default: 334)
+
+export WAXSIS_ROOT=/opt/waxsis
+WAXSIS_BIN=$WAXSIS_ROOT/scripts
+
+shopt -s -o nounset
+source $WAXSIS_BIN/bash_functions/functions.bash
+
+#shopt -s -o nounset
+#source ~/bin/functions.bash
+
+# Define Default here
+pdb=conf.pdb
+e=""
+buffer_subtract=total    # total, solute_reduced
+job=waxsis
+q=0.5
+nq=501
+jobId=unset
+testFlag=""
+w=4
+nt=4                 # need to control by admin
+expfile=""
+curve_q_unit=A       # A, nm
+convergenceFact=""
+convergence=normal        # normal, quick, thorough 
+cellExtensionLayer=6
+keepXtcFlag=""
+envelopeFile=""
+envelopeFitRefFile=""
+envelope_dist=7             # solvation layer in Angstrom
+bSolvateProgram=no
+bLigandPosres=yes
+bConstrainSolute=no
+solvent_density=0.334       # input unit in Ang 
+ligand=remove_cryst_agents              # remove_cryst_agents, kepp_all, remove_all
+bGo=0
+maxTimeYasara=48h
+sans_deuter_conc=""
+nResAllowed=9999999999
+# Additional options in Multi SAXS Hub
+replace_selen=yes    # yes, no
+scatt_convention=q   # q, s
+random_seed=yes       # yes, no
+constant_subtractions=no # yes, no    
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -s) shift
+            pdb="$1" ;;
+        -q) shift
+            q=$1 ;;
+        -nq) shift
+            nq = $1 ;;
+        -expfile) shift
+            expfile=$1 ;;
+        -solvent_density) shift
+            solvent_density=$1 ;;
+        -e) shift
+            e="-e $1" ;;
+        -jobid) shift
+            jobId=$1 ;;
+        -jobname) shift
+            job=$1 ;;
+        -test)
+            testFlag="-test" ;;
+        -buffer_subtract) shift
+            buffer_subtract=$1 ;;
+        -walltime) shift
+            w=$1 ;;
+        -curve_q_unit) shift
+            curve_q_unit=$1 ;;
+        -convergenceFact) shift
+            convergenceFact=$1 ;;
+        -convergence) shift
+            convergence=$1;;
+        -cellExtensionLayer) shift
+            cellExtensionLayer=$1 ;;
+        -keep-xtc)
+            keepXtcFlag="-keep-xtc" ;;
+        -nt) shift
+            nt=$1 ;;
+        -envelopeFile) shift
+            envelopeFile=$1 ;;
+        -envelopeFitRefFile) shift
+            envelopeFitRefFile=$1 ;;
+        -envelope_dist) shift
+            envelope_dist=$1 ;;
+        -bSolvateProgram) shift
+            bSolvateProgram=$1 ;;
+        -bLigandPosres) shift
+            bLigandPosres=$1 ;;
+        -bConstrainSolute) shift
+            bConstrainSolute=$1 ;;
+        -ligand) shift
+            ligand=$1 ;;
+        -maxTimeYasara) shift
+            maxTimeYasara=$1 ;;
+        -sans_deuter_conc) shift
+            # Note: SANS is not yet implemented into the webserver scripts.
+            echo -e "\nError, SANS is not yet implemented into the WAXSiS scripts\n"; exit 1
+            sans_deuter_conc="$1" ;;
+# Additional options in Multi SAXS Hub
+        -replace_selen) shift
+            replace_selen=$1 ;;
+        -scatt_convention) shift
+            scatt_convention=$1 ;;
+        -random_seed) shift
+            random_seed=$1 ;;
+        -constant_subtractions) shift
+            constant_subtractions=$1 ;;
+        -go)
+            bGo=1 ;;
+        * )
+            echo -e "\nError, unknown argument: $1"; exit 192 ;;
+    esac
+    shift
+done
+
+# Convert unit of solvent_density to e/nm^3
+sol_den=$(awk "BEGIN {print $solvent_density*1000}") 
+# Convert option values from Multi SAXS Hub to WAXSiS Convention if necessary
+
+if [ ! -e /$pdb ]; then
+    echo "/$pdb not found, using `pwd`/$pdb"
+    pdb=`pwd`/$pdb
+fi
+
+files-present $pdb || exit 1
+
+
+echo job = $job
+echo jobid = $jobId
+
+rm -rf $(pwd)/waxsisrun
+
+mkdir -p $(pwd)/waxsisrun
+
+cp $pdb waxsisrun/input_${jobId}.pdb
+
+# jobscript.sh -ppn $nt -q mpi -empty -j $job -w $w
+
+# Check if the other programs gives output_q in Angstrom.
+# 
+cat <<EOF > waxsisrun/$jobId.job
+jobId=$jobId
+email=
+ligand=$ligand
+buffer_subtract=$buffer_subtract
+loops=0
+qscatter=$q
+water=tip3p
+qcount=$nq
+solvent_density=$sol_den 
+output_q_unit=A         
+replace_selen=$replace_selen
+pdb_upload=$pdb
+heavy_atoms=1000
+total_atoms=1000
+curve_q_unit=$curve_q_unit
+cellExtensionLayer=$cellExtensionLayer
+envelope_dist=$envelope_dist
+bSolvateProgram=$bSolvateProgram
+bLigandPosres=$bLigandPosres
+bConstrainSolute=$bConstrainSolute
+maxTimeYasara=$maxTimeYasara
+sans_deuter_conc=$sans_deuter_conc
+nResAllowed=$nResAllowed
+random_seed=$random_seed
+scatt_convention=$scatt_convention
+constant_subtractions=$constant_subtractions
+EOF
+
+rm -rf job.sh 
+
+[ "$convergenceFact"    != "" ] && echo "convergenceFact=$convergenceFact"       >> waxsisrun/$jobId.job
+[ "$convergence"        != "" ] && echo "convergence=$convergence"               >> waxsisrun/$jobId.job
+[ "$envelopeFile"       != "" ] && echo "envelopeFile=$envelopeFile"             >> waxsisrun/$jobId.job
+[ "$envelopeFitRefFile" != "" ] && echo "envelopeFitRefFile=$envelopeFitRefFile" >> waxsisrun/$jobId.job
+[ "$expfile"    != "" ] && cp -v $expfile $(pwd)/waxsisrun/input_$jobId.dat
+
+{
+    echo -e 'source /opt/waxsis/local/bin/gromacs_4.62_swaxs_v0.1/bin/GMXRC.bash'
+    echo -e "export WAXSIS_ROOT=/opt/waxsis"
+    echo -e "export PATH=\$PATH:/opt/waxsis/yasara"
+
+    echo -e "\n\ncd $(pwd)/waxsisrun\n"
+    echo "/opt/waxsis/scripts/server-full-calc.sh -jobfile $(pwd)/waxsisrun/$jobId.job $testFlag -ncpu $nt -dir $(pwd)/waxsisrun $keepXtcFlag"
+} >> job.sh
+
+chmod 755 job.sh
+
+if [ $bGo = 1 ]; then
+#    bsub < job.sh
+     ./job.sh
+fi
+
