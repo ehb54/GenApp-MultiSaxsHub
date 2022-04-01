@@ -2426,6 +2426,10 @@ function calc_reduced_chi2() {
             var chi2_message = "Chi^2 obtained for q < " + req.qmax ;
 //            };
                      
+            if ( calcdata_len > expdata_len ) {
+                calcdata_len = expdata_len;
+            }
+
             for ( i = 0; i < calcdata_len; i++ ) {
                 delta_iq = iq_obj[ x ][ "y" ][ i ] - iq_obj[ "EXPR" ][ "y" ][ i ]; 
                 error_corrected = iq_obj[ "EXPR" ][ "error_y" ][ "array" ][ i ];
