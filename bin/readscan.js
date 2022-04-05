@@ -6,6 +6,6 @@ const scandata = require( "./scandata.js" );
 scandata.read( "testfile" );
 scandata.list();
 scandata.indextest();
-scandata.plot2d( [1,2] );
+scandata.plot2d( [-1,-1,0] );
 
 

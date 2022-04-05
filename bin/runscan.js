@@ -11,6 +11,7 @@ scandata.addparam( "drho", [ .1, 2.2, .3 ] );
 scandata.addparam( "eV", [ 5, 7 ] );
 scandata.addparam( "Vol", [ 10, 20, 30, 50 ] );
 scandata.setdata( [0,1,3], "hi" );
+scandata.fillints();
 scandata.list();
 scandata.indextest();
 scandata.write( "testfile" );

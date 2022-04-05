@@ -48,14 +48,9 @@ exports.indextest = function() {
         return false;
     }
 
-    var total_pts = scanobj.parameters[0].val.length;
-    for ( var i = 1; i < scanobj.parameters.length; ++i ) {
-        total_pts *= scanobj.parameters[i].val.length;
-    }
+    console.log( `indextest(): total points ${scanobj.datapoints}` );
 
-    console.log( `indextest(): total points ${total_pts}` );
-
-    for ( var i = 0; i < total_pts; ++i ) {
+    for ( var i = 0; i < scanobj.datapoints; ++i ) {
         var obj = [];
         var remainder = i;
         for ( var j = scanobj.parameters.length - 1; j >= 0; --j ) {
@@ -93,41 +88,73 @@ exports.read = function ( filename ) {
 
 exports.plot2d = function( obj ) {
     // return 2d plot data for selected indices
-    if ( obj.length != 2 ) {
-        console.error( "plot2d() : requires an array of two indices" );
+    // modify - obj [ -1, pos, pos, -1, pos ] etc where -1's are the selected indices
+    
+    if ( obj.length != scanobj.parameters.length ) {
+        console.error( `plot2d() : argument array length ${obj.length} does not match scanobj.parameters.length ${scanobj.parameters.length}` );
         process.exit(-1);
     }
+
+    if ( countOccurrences(obj, -1) != 2 ) {
+        console.error( `plot2d() : argument array must contain exactly 2 -1 values as positional markers of the plotted indices` );
+        process.exit(-1);
+    }
+        
+    var axes  = [];
+    for ( var i = 0; i < obj.length; ++i ) {
+        if ( obj[i] == -1 ) {
+            axes.push( i );
+        }
+    }
+
     var result = {};
+    result.xlabel = scanobj.parameters[axes[0]].name;
+    result.ylabel = scanobj.parameters[axes[1]].name;
+
     result.x = [];
     result.y = [];
     result.v = [];
 
-    for ( var i = 0; i < scanobj.parameters[obj[0]].val.length; ++i ) {
-        for ( var j = 0; j < scanobj.parameters[obj[1]].val.length; ++j ) {
-            result.x.push( scanobj.parameters[obj[0]].val[i] );
-            result.y.push( scanobj.parameters[obj[1]].val[j] );
-            // result.v.push( scanobj.data[ index( [
+    for ( var i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
+        for ( var j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
+            result.x.push( scanobj.parameters[axes[0]].val[i] );
+            result.y.push( scanobj.parameters[axes[1]].val[j] );
+            obj[axes[0]] = i;
+            obj[axes[1]] = j;
+            result.v.push( scanobj.data[ index( obj ) ] );
         }
     }
     console.log( JSON.stringify( result, null, 2 ) );
+}    
+
+exports.fillints = function() {
+    // fill data with integers
+    for ( var i = 0; i < scanobj.datapoints; ++i ) {
+        scanobj.data[i] = i;
+    }
 }    
 
 // *** private ***
   
 var scanobj = {};
 
+const countOccurrences = (arr, val) => arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
+
 compute_offsets = function() {
-    // compute multipliers for each parameter
+    // compute multipliers for each parameter & the number of datapoints
     scanobj.param_offsets = [ 0 ];
+    scanobj.datapoints = scanobj.parameters[0].val.length;
     if ( scanobj.parameters.length == 1 ) {
         return;
     }
     scanobj.param_offsets.push( scanobj.parameters[0].val.length );
+    scanobj.datapoints *= scanobj.parameters[1].val.length;
     if ( scanobj.parameters.length == 2 ) {
         return;
     }
     for ( var i = 2; i < scanobj.parameters.length; ++i ) {
         scanobj.param_offsets.push( scanobj.parameters[i-1].val.length * scanobj.param_offsets[i-1] );
+        scanobj.datapoints *= scanobj.parameters[i].val.length;
     }
 }
 
