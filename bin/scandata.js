@@ -37,6 +37,9 @@ exports.setdata = function( obj, val ) {
 }    
 
 exports.data = function( obj ) {
+    if ( typeof obj === 'undefined' ) {
+        return scanobj.data;
+    }
     if ( typeof obj === 'number' ) {
         obj = index2obj( obj );
     }
@@ -48,13 +51,20 @@ exports.data = function( obj ) {
     return scanobj.data[ index(obj) ];
 }    
 
-exports.indices = function( obj ) {
+exports.indexvalues = function( obj ) {
+    if ( typeof obj === 'undefined' ) {
+        var res = [];
+        for ( var i = 0; i < scanobj.datapoints; ++i ) {
+            res.push( exports.indexvalues( i ) );
+        }
+        return res;
+    }
     if ( typeof obj === 'number' ) {
         obj = index2obj( obj );
     }
     // obj [ p1index, p2index, .., pnidex ]
     if ( obj.length != scanobj.param_offsets.length ) {
-        console.error( `indices(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
+        console.error( `indexvalues(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
         process.exit(-1);
     }
     var res = [];
@@ -63,6 +73,22 @@ exports.indices = function( obj ) {
     }
         
     return res;
+}
+
+exports.indices = function( n ) {
+    if ( typeof n === 'undefined' ) {
+        var res = [];
+        for ( var i = 0; i < scanobj.datapoints; ++i ) {
+            res.push( exports.indices( i ) );
+        }
+        return res;
+    }
+    if ( typeof n !== 'number' ) {
+        console.error( `indices(): requires a number or empty parameter` );
+        process.exit(-1);
+    }
+        
+    return index2obj( n );
 }
 
 exports.indextest = function() {
@@ -79,7 +105,7 @@ exports.indextest = function() {
             console.error( `error: ${i} --> ` + JSON.stringify(obj) + ' --> ' + index(obj) );
             return false;
         }
-        console.log( `indices for ${i} ` + JSON.stringify(exports.indices(i)) );
+        console.log( `indexvalues for ${i} ` + JSON.stringify(exports.indexvalues(i)) );
     }
 
     console.log( 'indextest(): all mappings ok' );
