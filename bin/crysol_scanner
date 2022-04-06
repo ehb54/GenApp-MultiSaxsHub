@@ -36,40 +36,41 @@ dmsg = function( msg ) {
     console.log( msg );
 }
 
-const fs = require('fs');
-const util = require('util');
-promisify = util.promisify;
-const spawn = require('child_process').spawn;
-const exec = require('child_process').exec;
-//const exec =  require('child_process').fork;
-const p_exec = promisify( require( 'child_process' ).exec ) ;
+const fs                                       = require('fs');
+const util                                     = require('util');
+promisify                                      = util.promisify;
+const spawn                                    = require('child_process').spawn;
+const exec                                     = require('child_process').exec;
+//const exec                                     =  require('child_process').fork;
+const p_exec                                   = promisify( require( 'child_process' ).exec ) ;
 
-const { PerformanceObserver, performance } = require('perf_hooks');
-const scandata = require( "./scandata.js" );
+const { PerformanceObserver, performance }     = require('perf_hooks');
+const scandata                                 = require( "./scandata.js" );
 
-var input_from_ui = process.argv[ 2 ];
-var req_original = JSON.parse( input_from_ui );
+var input_from_ui                              = process.argv[ 2 ];
+var req_original                               = JSON.parse( input_from_ui );
 
-const cmdpath = __dirname + '/';
+const cmdpath                                  = __dirname + '/';
 
-var cmd = cmdpath + "crysolcmd";
+var cmd                                        = cmdpath + "crysolcmd";
 
-const string_expdata = "experimental_curve";
-const string_pdb = "pdb";
+const string_expdata                           = "experimental_curve";
+const string_pdb                               = "pdb";
 
-var pdb = req_original[ string_pdb ].join( " " );
-var pdbshort = pdb.split('/').slice(-1).pop();
-var expdata = "";
-var expdatashort = "";
+var pdb                                        = req_original[ string_pdb ].join( " " );
+var pdbshort                                   = pdb.split('/').slice(-1).pop();
+var expdata                                    = "";
+var expdatashort                               = "";
 
 // Decide run mode and update run mode specific options in app_texts
 
-var runmode = "calc";
-var startTime = 0.0;
+var runmode                                    = "calc";
+var startTime                                  = 0.0;
 
 // extract value from the array in the original req
-var req = {};
-var prefix_req = [];
+var req                                        = {};
+var prefix_req                                 = [];
+
 for ( x in req_original ) {
     prefix_req.push( x.split('_').slice(0,1).toString() );
     if ( Array.isArray(req_original[ x ]) ) {
@@ -80,28 +81,28 @@ for ( x in req_original ) {
             req[ x ] = new_value;
         };
     } else {
-       req[ x ] = req_original[ x ];
-   };
+        req[ x ] = req_original[ x ];
+    };
 };
 
 //console.log ( prefix_req + "\n" );
 
 // Update app_texts using user input
 
-var raw_expdata = "";
-var raw_expdatashort = "";
+var raw_expdata                                = "";
+var raw_expdatashort                           = "";
 
 function initialize() {
 
     if ( string_expdata in req ) {
-       raw_expdata += req[ string_expdata ].join( " " );
-       raw_expdatashort = raw_expdata.split('/').slice(-1).pop();
-       
-       if ( prefix_req.includes( "scan" ) ) {
-           runmode = "scan";
-       } else  {
-           runmode = "fit";
-       };
+        raw_expdata += req[ string_expdata ].join( " " );
+        raw_expdatashort = raw_expdata.split('/').slice(-1).pop();
+        
+        if ( prefix_req.includes( "scan" ) ) {
+            runmode = "scan";
+        } else  {
+            runmode = "fit";
+        };
     };
 
     if ( runmode == "calc" ) {
@@ -110,11 +111,11 @@ function initialize() {
                 if ( opt == string_pdb ){
                     app_texts_calc[ opt ][ "response" ] = pdbshort;
                 } else if ( opt == "angular_units"){
-                     app_texts_calc[ opt ][ "response" ] = angular_units[ "CRYSOL" ][ req[ opt ] ];
+                    app_texts_calc[ opt ][ "response" ] = angular_units[ "CRYSOL" ][ req[ opt ] ];
                 } else if ( app_texts_calc[ opt ][ "type" ] == "checkbox" ) { 
-                     app_texts_calc[ opt ][ "response" ] = "Y";
+                    app_texts_calc[ opt ][ "response" ] = "Y";
                 } else { 
-                     app_texts_calc[ opt ][ "response" ] = req[ opt ];    
+                    app_texts_calc[ opt ][ "response" ] = req[ opt ];    
                 };
             };
             if ( "id" in app_texts_calc[ opt ] && opt in req ) {
@@ -130,14 +131,14 @@ function initialize() {
                 if ( opt == string_pdb ){
                     app_texts_fit[ opt ][ "response" ] = pdbshort;
                 } else if ( opt == string_expdata ) {
-                     expdatashort = "tmp_" + raw_expdatashort;
-                     app_texts_fit[ opt ][ "response" ] = expdatashort;
+                    expdatashort = "tmp_" + raw_expdatashort;
+                    app_texts_fit[ opt ][ "response" ] = expdatashort;
                 } else if ( opt == "angular_units"){
-                     app_texts_fit[ opt ][ "response" ] = angular_units[ "CRYSOL" ][ req[ opt ] ];
+                    app_texts_fit[ opt ][ "response" ] = angular_units[ "CRYSOL" ][ req[ opt ] ];
                 } else if ( app_texts_fit[ opt ][ "type" ] == "checkbox" ) {
-                     app_texts_fit[ opt ][ "response" ] = "Y";
+                    app_texts_fit[ opt ][ "response" ] = "Y";
                 } else {
-                     app_texts_fit[ opt ][ "response" ] = req[ opt ];
+                    app_texts_fit[ opt ][ "response" ] = req[ opt ];
                 };
             };
             if ( "id" in app_texts_fit[ opt ] && opt in req ) {
@@ -158,21 +159,21 @@ function initialize() {
                 if ( opt == string_pdb ){
                     app_texts_scan[ opt ][ "response" ] = pdbshort;
                 } else if ( opt == string_expdata ) {
-                     expdatashort =  "tmp_" + raw_expdatashort;
-                     app_texts_scan[ opt ][ "response" ] = expdatashort;
+                    expdatashort =  "tmp_" + raw_expdatashort;
+                    app_texts_scan[ opt ][ "response" ] = expdatashort;
                 } else if ( opt == "angular_units"){
-                     app_texts_scan[ opt ][ "response" ] = angular_units[ "CRYSOL" ][ req[ opt ] ];
+                    app_texts_scan[ opt ][ "response" ] = angular_units[ "CRYSOL" ][ req[ opt ] ];
                 } else if ( app_texts_scan[ opt ][ "type" ] == "checkbox" ) {
-                     if ( opt == "constant_subtractions" ) { 
-                         app_texts_scan[ opt ][ "response" ] = "N";
-                     } else {
-                         app_texts_scan[ opt ][ "response" ] = "Y";
-                     };
+                    if ( opt == "constant_subtractions" ) { 
+                        app_texts_scan[ opt ][ "response" ] = "N";
+                    } else {
+                        app_texts_scan[ opt ][ "response" ] = "Y";
+                    };
                 } else {
-                     app_texts_scan[ opt ][ "response" ] = req[ opt ];
+                    app_texts_scan[ opt ][ "response" ] = req[ opt ];
                 };
             };
-// Check if scan variable options == 5: Mode 5 is definded as ratio
+            // Check if scan variable options == 5: Mode 5 is definded as ratio
             var opt_mode5 = opt + "_ratio";
             if ( opt_mode5 in req ) {
                 app_texts_scan[ opt ][ "response" ] = req[ opt_mode5 ];
@@ -187,45 +188,45 @@ function initialize() {
                 };
             };
         };
-    app_texts_scan[ "set_parameters" ][ "response" ] = "Y";
-    temp_response = JSON.parse( JSON.stringify ( app_texts_scan ) );
+        app_texts_scan[ "set_parameters" ][ "response" ] = "Y";
+        temp_response = JSON.parse( JSON.stringify ( app_texts_scan ) );
 
     };
     console.log(JSON.stringify ( temp_response, null, 2 ) );
 }
 
 function get_response_calc_runner(response_update, source, res, maxscansteps ) {
-        var response = '';
-        var resstring = res.replace(/\s+/g,'').replace(/\h+/g,'').replace(/\-+/g,'');
+    var response = '';
+    var resstring = res.replace(/\s+/g,'').replace(/\h+/g,'').replace(/\-+/g,'');
 
-        for ( opt in response_update) {
-            var optstring = response_update[ opt ][ "text" ].replace(/\s+/g,'').replace(/\h+/g,'');
-            if ( resstring.indexOf(optstring) >= 0 ) {
-                //if ( opt == "set_parameters" ) {
-                //    response = "N";
-                //} else {
-                response += response_update[ opt ][ "response" ].toString();
-                //};
-                source.stdin.write(response + "\n");
-                console.log ( res + response + "\n");
-                //console.log ( response +  "\n");
-            };
-         };
-     return response;
+    for ( opt in response_update) {
+        var optstring = response_update[ opt ][ "text" ].replace(/\s+/g,'').replace(/\h+/g,'');
+        if ( resstring.indexOf(optstring) >= 0 ) {
+            //if ( opt == "set_parameters" ) {
+            //    response = "N";
+            //} else {
+            response += response_update[ opt ][ "response" ].toString();
+            //};
+            source.stdin.write(response + "\n");
+            console.log ( res + response + "\n");
+            //console.log ( response +  "\n");
+        };
+    };
+    return response;
 }
 
 function get_response_fit_runner(response_update, source, res, maxscansteps ) {
-        var response = '';
-        var resstring = res.replace(/\s+/g,'').replace(/\h+/g,'').replace(/\-+/g,'');
+    var response = '';
+    var resstring = res.replace(/\s+/g,'').replace(/\h+/g,'').replace(/\-+/g,'');
 
-        for ( opt in response_update) {
-            var optstring = response_update[ opt ][ "text" ].replace(/\s+/g,'').replace(/\h+/g,'');
-            if ( resstring.indexOf(optstring) >= 0 ) {
+    for ( opt in response_update) {
+        var optstring = response_update[ opt ][ "text" ].replace(/\s+/g,'').replace(/\h+/g,'');
+        if ( resstring.indexOf(optstring) >= 0 ) {
             if ( opt == "set_parameters" ) {
                 response = "Y";
                 var currentstep = temp_response[ opt ][ "min" ] ;
                 if ( currentstep > maxscansteps ) {
-                   response = "N";
+                    response = "N";
                 };
                 //console.log ( opt + " :" + response + " " + currentstep + "\n" );
                 temp_response[ opt ][ "min" ] += 1;
@@ -233,16 +234,16 @@ function get_response_fit_runner(response_update, source, res, maxscansteps ) {
             } else {
                 response = temp_response[ opt ][ "response" ].toString();
             };
-                source.stdin.write(response + "\n");
-                console.log ( res + response + "\n");
-            };
-         };
-     return response;
+            source.stdin.write(response + "\n");
+            console.log ( res + response + "\n");
+        };
+    };
+    return response;
 }
 
 function scan_parameter_report( res  ) {
 
-//    console.log ("## Scan parameters = " + JSON.stringify( scan_variables) ); 
+    //    console.log ("## Scan parameters = " + JSON.stringify( scan_variables) ); 
 
     if ( req[ "excluded_volume_mode" ] == "5" ){
         var scale_ev_volume = parseFloat( res.substring(res.indexOf("V" ) + 4, res.indexOf("V" ) + 10 ) );
@@ -384,9 +385,9 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                 response = "Y";
                 var currentstep = temp_response[ opt ][ "min" ] ;
                 if ( currentstep < maxscansteps ) {
-                   var result = await set_scan_variables_scanner( ndx_scan[ currentstep ] );
+                    var result = await set_scan_variables_scanner( ndx_scan[ currentstep ] );
                 } else {
-                   response = "N";
+                    response = "N";
                 };
                 temp_response[ opt ][ "min" ] += 1;
                 currentstep += 1;
@@ -405,60 +406,60 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                     scan_parameter_report( res ); 
                 } else {
                     var exeTime = (Number.parseInt(performance.now() - startTime))/1000;
-                       console.log ( "Time per step = " + exeTime + " secs" );
-                       console.log ( "Remaining steps = " + ( maxscansteps - temp_response[ "set_parameters" ][ "min" ] ) + " : Expected to finish in " + ( exeTime * ( maxscansteps - temp_response[ "set_parameters" ][ "min" ] ) ).toFixed(2)+ " secs" ); 
-                       startTime = performance.now();
-               };
-           };
-//            console.log ("UPDATE response: " + response + "\n" );
+                    console.log ( "Time per step = " + exeTime + " secs" );
+                    console.log ( "Remaining steps = " + ( maxscansteps - temp_response[ "set_parameters" ][ "min" ] ) + " : Expected to finish in " + ( exeTime * ( maxscansteps - temp_response[ "set_parameters" ][ "min" ] ) ).toFixed(2)+ " secs" ); 
+                    startTime = performance.now();
+                };
+            };
+            //            console.log ("UPDATE response: " + response + "\n" );
             source.stdin.write(response + "\n");
             console.log ( "#" + res + "#" + response + "\n");
         };
         
-     };
+    };
 
-//         if ( result.length == 0 ) {
-//             result += " No option found from crysol output strings: " + res + "\n";
-//         };
-     return result;
+    //         if ( result.length == 0 ) {
+    //             result += " No option found from crysol output strings: " + res + "\n";
+    //         };
+    return result;
 }
 
 function readfile_log() {
     return new Promise ( (resolve, reject) => {
         try {
-           var files = fs.readdirSync( './' );
-           var chi2_data = [];
-           files.forEach ( function ( file ) {
-              var suffix = file.split( '.' ).pop();
-              if ( suffix == "log" ) {
-                     var txt = fs.readFileSync( file ).toString().split("\n");
-                     for ( var i = 0; i < txt.length; i++ ) {
-                         var txttrim = txt[ i ].replace(/\s+/g,'').replace(/\h+/g,'').replace(/-/g,'');
-                         if ( txttrim.indexOf( "DroMin" ) >= 0 ) {
-                             var istart = i + 2;    // always skip the first chi^2
-                         };
-                         if ( txttrim.indexOf ( "Radii" ) >= 0 ) {
-                             var iend = i - 1;
-                         };
-                     };
-                     for ( var i = istart; i < iend; i++ ) {
-                         var txttrim = txt[ i ].toString().replace( /^\s*/,"" ).split(" ");
-                         if ( txttrim[0] != "--" ) {
-//                         console.log ( txttrim + "\n" );
-//                             chi2_data.push( parseFloat( txttrim[ 15 ] ) ); 
-                           var chi2_value = txt[ i ].substring( 66,73 );
-                           if ( chi2_value == "*******" ) {
-                               chi2_value = "1000.0";
-                           };
-                           chi2_data.push( parseFloat( txt[ i ].substring( 66,73 ) ) );
-                         };
-                 };      
-              };
-           });
-//           console.log ( "CHI2 : " + chi2_data + "\n" );
-           resolve( chi2_data );
+            var files = fs.readdirSync( './' );
+            var chi2_data = [];
+            files.forEach ( function ( file ) {
+                var suffix = file.split( '.' ).pop();
+                if ( suffix == "log" ) {
+                    var txt = fs.readFileSync( file ).toString().split("\n");
+                    for ( var i = 0; i < txt.length; i++ ) {
+                        var txttrim = txt[ i ].replace(/\s+/g,'').replace(/\h+/g,'').replace(/-/g,'');
+                        if ( txttrim.indexOf( "DroMin" ) >= 0 ) {
+                            var istart = i + 2;    // always skip the first chi^2
+                        };
+                        if ( txttrim.indexOf ( "Radii" ) >= 0 ) {
+                            var iend = i - 1;
+                        };
+                    };
+                    for ( var i = istart; i < iend; i++ ) {
+                        var txttrim = txt[ i ].toString().replace( /^\s*/,"" ).split(" ");
+                        if ( txttrim[0] != "--" ) {
+                            //                         console.log ( txttrim + "\n" );
+                            //                             chi2_data.push( parseFloat( txttrim[ 15 ] ) ); 
+                            var chi2_value = txt[ i ].substring( 66,73 );
+                            if ( chi2_value == "*******" ) {
+                                chi2_value = "1000.0";
+                            };
+                            chi2_data.push( parseFloat( txt[ i ].substring( 66,73 ) ) );
+                        };
+                    };      
+                };
+            });
+            //           console.log ( "CHI2 : " + chi2_data + "\n" );
+            resolve( chi2_data );
         } catch (error) {
-           reject( error.message );
+            reject( error.message );
         };
 
     });
@@ -471,230 +472,230 @@ async function write_chi2( nscans, chi2_from_log ) {
             return console.log ( "Number of scan variables is 0." )});
     } else if ( nscans == 1 ) {
         result += await fill_chi2_1d( chi2_from_log );
-//        result += await write_zip( );
+        //        result += await write_zip( );
     } else { 
         result += await fill_chi2_2d( nscans, chi2_from_log );
-//        result += await write_zip( );
+        //        result += await write_zip( );
     };
 }
 
 function write_zip() {
     return new Promise ( ( resolve, reject ) => {
-    var result = '';
-    try {
-    var zipname = req._base_directory;
-    var zipdir = '';
-    zipname = pdbshort.split( '.' ).slice( 0,1 ) + "00.zip";
-//    zipname = req._base_directory + "/" + "CRYSOL/" + pdbshort.split('.').slice(0,1) + "00.zip";
+        var result = '';
+        try {
+            var zipname = req._base_directory;
+            var zipdir = '';
+            zipname = pdbshort.split( '.' ).slice( 0,1 ) + "00.zip";
+            //    zipname = req._base_directory + "/" + "CRYSOL/" + pdbshort.split('.').slice(0,1) + "00.zip";
 
-    const cmd = "zip -r " + zipname + " " + "*.csv" ;
+            const cmd = "zip -r " + zipname + " " + "*.csv" ;
 
-    exec(cmd,(err,stdout,stderr) => {
-        if (err) {
-            result += "Error in zipping csv files :" + err.message + "\n";
-        }
-    });
-    resolve ( result );
-    } catch ( error ) {
-        reject (error.message);
-    };
+            exec(cmd,(err,stdout,stderr) => {
+                if (err) {
+                    result += "Error in zipping csv files :" + err.message + "\n";
+                }
+            });
+            resolve ( result );
+        } catch ( error ) {
+            reject (error.message);
+        };
     });
 }
 
 function fill_chi2_1d( chi2_from_log) {
     return new Promise ( ( resolve, reject ) => {
-    var result = '';
-    var scanfile = pdbshort.split( '.' ).slice( 0,1 ) + "00.scan";
+        var result = '';
+        var scanfile = pdbshort.split( '.' ).slice( 0,1 ) + "00.scan";
 
-    try {
-    var stream = fs.createWriteStream( scan_outfiles[ 0 ] ) ;
-    var streamall = fs.createWriteStream( scanfile ) ;
-    var filename = scan_outfiles[ 0 ]; 
-    var header = filename.split('.').slice(0,1);
-    stream.write( [ header, "chi2" ] + "\n" );
-    streamall.write( [ header, "chi2" ] + "\n" );
-    var imax = parseInt( app_texts_scan[ scan_variables_points[ 0 ] ][ "response" ] );
-    for ( var i=0; i < imax; i++ ) {
-        var x = parseFloat( app_texts_scan[ scan_variables_low[ 0 ] ][ "response" ] ) + 
-                parseFloat( app_texts_scan[ scan_variables_interval[ 0 ] ][ "response" ] ) * parseFloat( i );
-        var y = chi2_from_log[ i ];
-        stream.write( [ x, y ] + "\n" ); 
-        streamall.write( [ x, y ] + "\n" );
-    };
-    stream.end();
-    streamall.end();
+        try {
+            var stream = fs.createWriteStream( scan_outfiles[ 0 ] ) ;
+            var streamall = fs.createWriteStream( scanfile ) ;
+            var filename = scan_outfiles[ 0 ]; 
+            var header = filename.split('.').slice(0,1);
+            stream.write( [ header, "chi2" ] + "\n" );
+            streamall.write( [ header, "chi2" ] + "\n" );
+            var imax = parseInt( app_texts_scan[ scan_variables_points[ 0 ] ][ "response" ] );
+            for ( var i=0; i < imax; i++ ) {
+                var x = parseFloat( app_texts_scan[ scan_variables_low[ 0 ] ][ "response" ] ) + 
+                    parseFloat( app_texts_scan[ scan_variables_interval[ 0 ] ][ "response" ] ) * parseFloat( i );
+                var y = chi2_from_log[ i ];
+                stream.write( [ x, y ] + "\n" ); 
+                streamall.write( [ x, y ] + "\n" );
+            };
+            stream.end();
+            streamall.end();
 
-    resolve( result ); 
-    } catch( error ) {
-        reject( error.message );
-    };
+            resolve( result ); 
+        } catch( error ) {
+            reject( error.message );
+        };
     });
 }
 
 function fill_chi2_2d( nscans, chi2_from_log) {
     return new Promise ( ( resolve, reject ) => {
-    var result = '';
-    var scanfile = pdbshort.split( '.' ).slice( 0,1 ) + "00.scan";
-    try {
-    count = 0;
-    total = 0;
-    var streamall = fs.createWriteStream( scanfile ) ;
-    for ( var i = 0; i < nscans-1; i++ ) {
-        var imax = parseInt( app_texts_scan[ scan_variables_points[ i ] ][ "response" ] );
-        for ( var j = i + 1; j < nscans; j++ ) {
-            var logcount = 0;
-            var stream = fs.createWriteStream( scan_outfiles[ count ] ) ;
-            var filename = scan_outfiles[ count ];
-            var header = [ filename.split('.').slice(0,1) ];
-            var jmax = parseInt( app_texts_scan[ scan_variables_points[ j ] ][ "response" ] );
-            for ( var jj = 0; jj < jmax; jj++ ) {
-                var temp_v = parseFloat( app_texts_scan[ scan_variables_low[ j ] ][ "response" ] ) +  
-                             parseFloat( app_texts_scan[ scan_variables_interval[ j ] ][ "response" ] ) * parseFloat ( jj );
-                header.push( temp_v );
-            }
-            stream.write( header + "\n" );
-            streamall.write( header + "\n" );
+        var result = '';
+        var scanfile = pdbshort.split( '.' ).slice( 0,1 ) + "00.scan";
+        try {
+            count = 0;
+            total = 0;
+            var streamall = fs.createWriteStream( scanfile ) ;
+            for ( var i = 0; i < nscans-1; i++ ) {
+                var imax = parseInt( app_texts_scan[ scan_variables_points[ i ] ][ "response" ] );
+                for ( var j = i + 1; j < nscans; j++ ) {
+                    var logcount = 0;
+                    var stream = fs.createWriteStream( scan_outfiles[ count ] ) ;
+                    var filename = scan_outfiles[ count ];
+                    var header = [ filename.split('.').slice(0,1) ];
+                    var jmax = parseInt( app_texts_scan[ scan_variables_points[ j ] ][ "response" ] );
+                    for ( var jj = 0; jj < jmax; jj++ ) {
+                        var temp_v = parseFloat( app_texts_scan[ scan_variables_low[ j ] ][ "response" ] ) +  
+                            parseFloat( app_texts_scan[ scan_variables_interval[ j ] ][ "response" ] ) * parseFloat ( jj );
+                        header.push( temp_v );
+                    }
+                    stream.write( header + "\n" );
+                    streamall.write( header + "\n" );
 
-            for ( var ii = 0; ii < imax; ii++ ) {
-                var x = parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) + 
-                        parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseFloat( ii );
-                var temp_v = [ x ];
-                for ( var jj = 0; jj < jmax; jj++ ) {
-                   var y = chi2_from_log[ total ];
-                   temp_v.push( y );
-                   logcount += 1;
-                   total += 1;
+                    for ( var ii = 0; ii < imax; ii++ ) {
+                        var x = parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) + 
+                            parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseFloat( ii );
+                        var temp_v = [ x ];
+                        for ( var jj = 0; jj < jmax; jj++ ) {
+                            var y = chi2_from_log[ total ];
+                            temp_v.push( y );
+                            logcount += 1;
+                            total += 1;
+                        };
+                        stream.write( temp_v + "\n" );
+                        streamall.write(temp_v + "\n" );
+
+                    };
+                    count += 1;
+                    stream.end();
                 };
-                stream.write( temp_v + "\n" );
-                streamall.write(temp_v + "\n" );
-
             };
-        count += 1;
-        stream.end();
+            streamall.end();
+            resolve( result );
+        } catch ( error ) {
+            reject ( error.message );
         };
-    };
-    streamall.end();
-    resolve( result );
-    } catch ( error ) {
-        reject ( error.message );
-    };
     });
 }
 
 
 function set_scan_variables_scanner( nbin ){
     return new Promise ( (resolve, reject) => {
-    var result = '';
-//    console.log ( "UPDATE START\n" );
-    try {
-        for ( var i = 0; i < scan_variables.length; i++ ){
-            if ( nbin[ i ] < 0 ) {
-                temp_response[ scan_variables_low[ i ] ][ "response" ] = app_texts_scan[ scan_variables_low[ i ] ][ "response" ];
-                temp_response[ scan_variables_high[ i ] ][ "response" ] = app_texts_scan[ scan_variables_high[ i ] ][ "response" ];
-            } else {
-                temp_response[ scan_variables_low[ i ] ][ "response" ] = 
-                       parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) 
-                     + parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseInt( nbin[ i ] );
-                temp_response[ scan_variables_high[ i ] ][ "response" ] = 
-                       parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) 
-                     + parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseInt( nbin[ i ] ); 
+        var result = '';
+        //    console.log ( "UPDATE START\n" );
+        try {
+            for ( var i = 0; i < scan_variables.length; i++ ){
+                if ( nbin[ i ] < 0 ) {
+                    temp_response[ scan_variables_low[ i ] ][ "response" ] = app_texts_scan[ scan_variables_low[ i ] ][ "response" ];
+                    temp_response[ scan_variables_high[ i ] ][ "response" ] = app_texts_scan[ scan_variables_high[ i ] ][ "response" ];
+                } else {
+                    temp_response[ scan_variables_low[ i ] ][ "response" ] = 
+                        parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) 
+                        + parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseInt( nbin[ i ] );
+                    temp_response[ scan_variables_high[ i ] ][ "response" ] = 
+                        parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) 
+                        + parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseInt( nbin[ i ] ); 
+                };
+                //            console.log(temp_response[ scan_variables_min[ i ] ][ "response" ], temp_response[ scan_variables_max[ i ] ][ "response" ], temp_response[ scan_variables_interval[ i ] ][ "response" ]);
             };
-//            console.log(temp_response[ scan_variables_min[ i ] ][ "response" ], temp_response[ scan_variables_max[ i ] ][ "response" ], temp_response[ scan_variables_interval[ i ] ][ "response" ]);
+            //        result += "UPDATE set_parameters DONE \n";
+            resolve(result);
+        } catch( error ) {
+            //        console.log ( "Error in set up scanning variables.");
+            reject( "Error in set up scanning variables." );
         };
-//        result += "UPDATE set_parameters DONE \n";
-        resolve(result);
-    } catch( error ) {
-//        console.log ( "Error in set up scanning variables.");
-        reject( "Error in set up scanning variables." );
-    };
-//    console.log("CHECK SCAN VARIABLES " + temp_response[ "set_parameters" ]["min"] + temp_response[ "set_parameters" ]["response"] + " \n");
-//    console.log(JSON.stringify(app_texts_update));
+        //    console.log("CHECK SCAN VARIABLES " + temp_response[ "set_parameters" ]["min"] + temp_response[ "set_parameters" ]["response"] + " \n");
+        //    console.log(JSON.stringify(app_texts_update));
 
     });
 }
 
 function spawn_calc_runner(response_update, maxscansteps) {
     return new Promise ( (resolve, reject) => {
-    const source = spawn(cmd, []);
+        const source = spawn(cmd, []);
 
-    source.stdout.setEncoding('utf8');
+        source.stdout.setEncoding('utf8');
 
-//    source.stdin.pipe(process.stdout);
+        //    source.stdin.pipe(process.stdout);
 
-    var res = '';
-    source.stdout.on( 'data', (data) => {
-        var res = data;
-        var response = get_response_calc_runner(response_update, source, res, maxscansteps );
-//        source.stdin.write(response + "\n");
-//        resolve (response);
-    });
+        var res = '';
+        source.stdout.on( 'data', (data) => {
+            var res = data;
+            var response = get_response_calc_runner(response_update, source, res, maxscansteps );
+            //        source.stdin.write(response + "\n");
+            //        resolve (response);
+        });
 
-    source.stderr.on( 'data', (data) => {
-        //console.log(`Crysol scan error: ${data}`);
-    });
+        source.stderr.on( 'data', (data) => {
+            //console.log(`Crysol scan error: ${data}`);
+        });
 
-    source.on('close', (code) => {
-        //console.log(`Crysol scanner exited with code ${code}`);
-        //resolve (code);
-    });
+        source.on('close', (code) => {
+            //console.log(`Crysol scanner exited with code ${code}`);
+            //resolve (code);
+        });
 
     });
 }
 
 function spawn_fit_runner(response_update, maxscansteps) {
     return new Promise ( (resolve, reject) => {
-    const source = spawn(cmd, []);
+        const source = spawn(cmd, []);
 
-    source.stdout.setEncoding('utf8');
+        source.stdout.setEncoding('utf8');
 
-//    source.stdin.pipe(process.stdout);
+        //    source.stdin.pipe(process.stdout);
 
-    var maxscansteps = 0;
-    var res = '';
-    source.stdout.on( 'data', (data) => {
-        var res = data;
-        var response = get_response_fit_runner(response_update, source, res, maxscansteps );
-//        source.stdin.write(response + "\n");
-//        resolve (response);
-    });
+        var maxscansteps = 0;
+        var res = '';
+        source.stdout.on( 'data', (data) => {
+            var res = data;
+            var response = get_response_fit_runner(response_update, source, res, maxscansteps );
+            //        source.stdin.write(response + "\n");
+            //        resolve (response);
+        });
 
-    source.stderr.on( 'data', (data) => {
-        //console.log(`Crysol scan error: ${data}`);
-    });
+        source.stderr.on( 'data', (data) => {
+            //console.log(`Crysol scan error: ${data}`);
+        });
 
-    source.on('close', (code) => {
-        //console.log(`Crysol scanner exited with code ${code}`);
-        resolve (code);
-    });
+        source.on('close', (code) => {
+            //console.log(`Crysol scanner exited with code ${code}`);
+            resolve (code);
+        });
 
     });
 }
 
 function spawn_scan_runner( ndx_scan, maxscansteps) {
     return new Promise ( (resolve, reject) => {
-    const source = spawn(cmd, []);
+        const source = spawn(cmd, []);
 
-//    app_texts[ "set_parameters" ][ "min" ] = 0;
+        //    app_texts[ "set_parameters" ][ "min" ] = 0;
 
-    var result = '';
-    source.stdout.setEncoding('utf8');
+        var result = '';
+        source.stdout.setEncoding('utf8');
 
-    var res = '';
-    source.stdout.on( 'data', (data) => {
-        var res = data;
-        var result = get_response_scan_runner( source, res, ndx_scan, maxscansteps );
-//        source.stdin.write(response + "\n");
-//        resolve (result);
-    });
+        var res = '';
+        source.stdout.on( 'data', (data) => {
+            var res = data;
+            var result = get_response_scan_runner( source, res, ndx_scan, maxscansteps );
+            //        source.stdin.write(response + "\n");
+            //        resolve (result);
+        });
 
-    source.stderr.on( 'data', (data) => {
-        //console.log(`Crysol scan error: ${data}`);
-    });
+        source.stderr.on( 'data', (data) => {
+            //console.log(`Crysol scan error: ${data}`);
+        });
 
-    source.on('close', (code) => {
-        //console.log(`Crysol scanner exited with code ${code}`);
-        resolve (code);
-    });
+        source.on('close', (code) => {
+            //console.log(`Crysol scanner exited with code ${code}`);
+            resolve (code);
+        });
 
     });
 }
@@ -735,26 +736,26 @@ async function fit_runner() {
 async function scan_runner() {
 
     var result = '';
-//    var ndro = parseInt( temp_response[ "scan_contrast_hydration_points" ][ "response" ] );
-//    var nradius = parseInt( temp_response[ "scan_atomic_radius_points" ][ "response"] );
-//    var nev = parseInt( temp_response[ "scan_excluded_volume_points" ][ "response" ] );
+    //    var ndro = parseInt( temp_response[ "scan_contrast_hydration_points" ][ "response" ] );
+    //    var nradius = parseInt( temp_response[ "scan_atomic_radius_points" ][ "response"] );
+    //    var nev = parseInt( temp_response[ "scan_excluded_volume_points" ][ "response" ] );
 
     var scanstep = 0;
 
     var nscans = await setup_scan();
 
     var ndx_scan = generate_scan_array( 3, nscans );
-//    console.log ( "Scanning parameters = " + nscans + " : " + ndx_scan + "\n");
+    //    console.log ( "Scanning parameters = " + nscans + " : " + ndx_scan + "\n");
     var maxscansteps = ndx_scan.length;
     
-//    console.log ( "##### Total scanning parameters = " + maxscansteps + "\n" );
+    //    console.log ( "##### Total scanning parameters = " + maxscansteps + "\n" );
 
     result += await spawn_scan_runner( ndx_scan, maxscansteps );
     scanstep += 1;
     var chi2_from_log = await readfile_log();
 
     write_chi2(nscans, chi2_from_log);
-//    console.log( chi2_scan );
+    //    console.log( chi2_scan );
     console.log( "# of step = " + maxscansteps + " Done \n" );
     return result;
 }
@@ -783,580 +784,580 @@ var angular_units = {
 };
 
 var app_texts_calc = {
-"enter_your_option":
-                  {"text": "Enter your option ........." 
-                  ,"type": "integer"
-                  ,"response": "0" }
-,"pdb": 
-                  {"text": "Brookhaven file name ................... <" 
-                  ,"type": "file"
-                  ,"response": ""}
-,"experimental_curve":      
-                  {"text": "Enter data file ......................"
-                  ,"type": "file"
-                  ,"response": "N"}
-,"savfile":      
-                  {"text": "Save file name ......................... <"
-                  ,"type": "file"
-                  ,"response": " "}
-,"chain_id": 
-                  {"text": "Process chain (0: all chains) ...."
-                  ,"type": "integer"
-                  , "response": ""}
-,"maxharmonics": 
-                  {"text": "Maximum order of  harmonics ........... <" 
-                  ,"type": "integer"
-                  ,"response": 15}
-,"fibonacci_grid": 
-                  {"text": "Order of Fibonacci grid ............... <" 
-                  ,"type": "integer"
-                  ,"response": 17}
-,"qmax": 
-                  {"text": "Maximum s value ........................ <"
-                   ,"response": 0.5
-                   ,"type": "float"
-                   ,"info": "use for calc mode"}
-,"smax":
-                  {"text": "Smax in the fitting range .............. <"
-                  ,"type": "float"
-                  ,"response": ""
-                  ,"info": "use for fit and scan mode"}
-,"number_of_points": 
-                  {"text": "Number of points ..............." 
-                  ,"type": "integer"
-                   , "response": ""}
-,"explicit_hydrogen":
-                  {"text": "Account for explicit hydrogens?"
-                  ,"type": "checkbox"
-                  , "response": "N"}
-,"fit_curve":
-                  {"text": "Fit the experimental curve"
-                  ,"type": "character"
-                  ,"response": "N"}
-,"solvation_density": 
-                  {"text": "Electron density of the solvent, e/A**3  <"
-                  ,"type": "float"
-                  ,"response": ""}
-,"angular_units":     
-                  {"text": "2 *  sin(theta)/lambda [1/nm]  (4) ....."
-                  ,"type": "listbox"
-                  ,"response": ""}
-,"plot_fit":
-                  {"text": "Plot the fit [ Y / N ]"
-                  ,"type": "character"
-                  ,"response": "N"}
-,"set_parameters": 
-                  {"text": "Another set of parameters [ Y / N ] ...."
-                  ,"type": "character"
-                  ,"response": "N"
-                  ,"min": 0
-                  }
-,"minimize_again": 
-                  {"text": "Minimize again with new limits [ Y / N ] <"
-                  ,"type": "boolean"
-                  ,"response": "Y"}
-,"fix_contrast_hydration":
-                  {"text": "Contrast of the solvation shell ......"
-                  ,"type": "float"
-                   ,"response": " "  
-                   ,"min": 0.0
-                   ,"max": 0.075
-                   ,"delta": 0.003
-                   ,"npoints": 2}
-,"fit_contrast_hydration_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fix_contrast_hydration" ]
-                  ,"response": " "
-                  }
-,"scan_contrast_hydration_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fix_contrast_hydration" ]
-                  ,"response": " "
-                  }
-,"fix_atomic_radius":
-                  {"text": "Average atomic radius .................. <"
-                   ,"type": "float"
-                   ,"response": " "
-                  }
-,"fit_atomic_radius_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                   ,"id": [ "fix_atomic_radius" ]
-                   ,"response": " "
-                  }
-,"scan_atomic_radius_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                   ,"id": [ "fix_atomic_radius" ]
-                   ,"response": " "
-                  }
-,"fix_excluded_volume":
-                  {"text": "Excluded Volume ................."
-                  ,"type": "float"
-                   ,"response": " "
-                  }
-,"fit_excluded_volume_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                   ,"id": [ "fix_excluded_volume" ]
-                   ,"response": " "
-                  }
-,"scan_excluded_volume_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                   ,"id": [ "fix_excluded_volume" ]
-                   ,"response": " "
-                  }
-,"constant_subtractions":
-                  {"text": "Subtract constant ...................... <"
-                  ,"type": "checkbox"
-                  ,"response": "N"}
-,"averaged_tail":
-                  {"text": "Averaged tail intensity is ............."
-                  ,"type": "float"
-                  ,"response": " "}
-,"background_min":
-                  {"text": "Minimum relative background ............ <"
-                  ,"type": "float"
-                  ,"response": -0.5}
-,"background_max":
-                  {"text": "Maximum relative background ............ <"
-                  ,"type": "float"
-                  ,"response": 0.5}
+    "enter_your_option":
+    {"text": "Enter your option ........." 
+     ,"type": "integer"
+     ,"response": "0" }
+    ,"pdb": 
+    {"text": "Brookhaven file name ................... <" 
+     ,"type": "file"
+     ,"response": ""}
+    ,"experimental_curve":      
+    {"text": "Enter data file ......................"
+     ,"type": "file"
+     ,"response": "N"}
+    ,"savfile":      
+    {"text": "Save file name ......................... <"
+     ,"type": "file"
+     ,"response": " "}
+    ,"chain_id": 
+    {"text": "Process chain (0: all chains) ...."
+     ,"type": "integer"
+     , "response": ""}
+    ,"maxharmonics": 
+    {"text": "Maximum order of  harmonics ........... <" 
+     ,"type": "integer"
+     ,"response": 15}
+    ,"fibonacci_grid": 
+    {"text": "Order of Fibonacci grid ............... <" 
+     ,"type": "integer"
+     ,"response": 17}
+    ,"qmax": 
+    {"text": "Maximum s value ........................ <"
+     ,"response": 0.5
+     ,"type": "float"
+     ,"info": "use for calc mode"}
+    ,"smax":
+    {"text": "Smax in the fitting range .............. <"
+     ,"type": "float"
+     ,"response": ""
+     ,"info": "use for fit and scan mode"}
+    ,"number_of_points": 
+    {"text": "Number of points ..............." 
+     ,"type": "integer"
+     , "response": ""}
+    ,"explicit_hydrogen":
+    {"text": "Account for explicit hydrogens?"
+     ,"type": "checkbox"
+     , "response": "N"}
+    ,"fit_curve":
+    {"text": "Fit the experimental curve"
+     ,"type": "character"
+     ,"response": "N"}
+    ,"solvation_density": 
+    {"text": "Electron density of the solvent, e/A**3  <"
+     ,"type": "float"
+     ,"response": ""}
+    ,"angular_units":     
+    {"text": "2 *  sin(theta)/lambda [1/nm]  (4) ....."
+     ,"type": "listbox"
+     ,"response": ""}
+    ,"plot_fit":
+    {"text": "Plot the fit [ Y / N ]"
+     ,"type": "character"
+     ,"response": "N"}
+    ,"set_parameters": 
+    {"text": "Another set of parameters [ Y / N ] ...."
+     ,"type": "character"
+     ,"response": "N"
+     ,"min": 0
+    }
+    ,"minimize_again": 
+    {"text": "Minimize again with new limits [ Y / N ] <"
+     ,"type": "boolean"
+     ,"response": "Y"}
+    ,"fix_contrast_hydration":
+    {"text": "Contrast of the solvation shell ......"
+     ,"type": "float"
+     ,"response": " "  
+     ,"min": 0.0
+     ,"max": 0.075
+     ,"delta": 0.003
+     ,"npoints": 2}
+    ,"fit_contrast_hydration_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fix_contrast_hydration" ]
+     ,"response": " "
+    }
+    ,"scan_contrast_hydration_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fix_contrast_hydration" ]
+     ,"response": " "
+    }
+    ,"fix_atomic_radius":
+    {"text": "Average atomic radius .................. <"
+     ,"type": "float"
+     ,"response": " "
+    }
+    ,"fit_atomic_radius_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fix_atomic_radius" ]
+     ,"response": " "
+    }
+    ,"scan_atomic_radius_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fix_atomic_radius" ]
+     ,"response": " "
+    }
+    ,"fix_excluded_volume":
+    {"text": "Excluded Volume ................."
+     ,"type": "float"
+     ,"response": " "
+    }
+    ,"fit_excluded_volume_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fix_excluded_volume" ]
+     ,"response": " "
+    }
+    ,"scan_excluded_volume_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fix_excluded_volume" ]
+     ,"response": " "
+    }
+    ,"constant_subtractions":
+    {"text": "Subtract constant ...................... <"
+     ,"type": "checkbox"
+     ,"response": "N"}
+    ,"averaged_tail":
+    {"text": "Averaged tail intensity is ............."
+     ,"type": "float"
+     ,"response": " "}
+    ,"background_min":
+    {"text": "Minimum relative background ............ <"
+     ,"type": "float"
+     ,"response": -0.5}
+    ,"background_max":
+    {"text": "Maximum relative background ............ <"
+     ,"type": "float"
+     ,"response": 0.5}
 };
 
 var app_texts_fit = {
-"enter_your_option":
-                  {"text": "Enter your option ........."
-                  ,"type": "integer"
-                  ,"response": "0" }
-,"pdb":           
-                  {"text": "Brookhaven file name ................... <"
-                  ,"type": "file"
-                  ,"response": ""}
-,"experimental_curve":
-                  {"text": "Enter data file ......................"
-                  ,"type": "file"
-                  ,"response": "N"}
-,"savfile":       
-                  {"text": "Save file name ......................... <"
-                  ,"type": "file"
-                  ,"response": " "}
-,"chain_id":      
-                  {"text": "Process chain (0: all chains) ...."
-                  ,"type": "integer"
-                  , "response": ""}
-,"maxharmonics":  
-                  {"text": "Maximum order of  harmonics ........... <"
-                  ,"type": "integer"
-                  ,"response": 15}
-,"fibonacci_grid":
-                  {"text": "Order of Fibonacci grid ............... <"
-                  ,"type": "integer"
-                  ,"response": 17}
-,"qmax":          
-                  {"text": "Maximum s value ........................ <"
-                   ,"response": 0.5
-                   ,"type": "float"
-                   ,"info": "use for calc mode"}
-,"smax":          
-                  {"text": "Smax in the fitting range .............. <"
-                  ,"type": "float"
-                  ,"response": ""
-                  ,"info": "use for fit and scan mode"}
-,"number_of_points":
-                  {"text": "Number of points ..............."
-                  ,"type": "integer"
-                   , "response": ""}
-,"explicit_hydrogen":
-                  {"text": "Account for explicit hydrogens?"
-                  ,"type": "checkbox"
-                  , "response": "N"}
-,"fit_curve":     
-                  {"text": "Fit the experimental curve"
-                  ,"type": "character"
-                  ,"response": "Y"}
-,"solvation_density":
-                  {"text": "Electron density of the solvent, e/A**3  <"
-                  ,"type": "float"
-                  ,"response": ""}
-,"angular_units": 
-                  {"text": "2 *  sin(theta)/lambda [1/nm]  (4) ....."
-                  ,"type": "listbox"
-                  ,"response": ""}
-,"plot_fit":      
-                  {"text": "Plot the fit [ Y / N ]"
-                  ,"type": "character"
-                  ,"response": "N"}
-,"set_parameters":
-                  {"text": "Another set of parameters [ Y / N ] ...."
-                  ,"type": "character"
-                  ,"response": "N"
-                  ,"min": 0
-                  }
-,"minimize_again":
-                  {"text": "Minimize again with new limits [ Y / N ] <"
-                  ,"type": "boolean"
-                  ,"response": "Y"}
-,"fit_contrast_hydration_low":
-                  {"text": "Minimum contrast in the shell .......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fit_contrast_hydration_high":
-                  {"text": "Maximum contrast in the shell .......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fix_contrast_hydration":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_contrast_hydration_low", "fit_contrast_hydration_high" ]
-                  ,"response": " "}
-,"scan_contrast_hydration_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_contrast_hydration_low" ]
-                  ,"response": " "}
-,"scan_contrast_hydration_high":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_contrast_hydration_high" ]
-                  ,"response": " "}
-,"fit_atomic_radius_low":
-                  {"text": "Minimum radius of atomic group ......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fit_atomic_radius_high": 
-                  {"text": "Maximum radius of atomic group ......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fix_atomic_radius":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_atomic_radius_low", "fit_atomic_radius_high" ]
-                  ,"response": " "}
-,"scan_atomic_radius_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_atomic_radius_low" ]
-                  ,"response": " "}
-,"scan_atomic_radius_high":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_atomic_radius_high" ]
-                  ,"response": " "}
-,"fit_excluded_volume_low":
-                  {"text": "Minimum excluded volume ................ <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fit_excluded_volume_high":
-                  {"text": "Maximum excluded volume ................ <"
-                  ,"type": "float"
-                  ,"response": " " }
-,"fix_excluded_volume":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_excluded_volume_low", "fit_excluded_volume_high" ]
-                  ,"response": " "}
-,"scan_excluded_volume_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_excluded_volume_low" ]
-                  ,"response": " "}
-,"scan_excluded_volume_high":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "fit_excluded_volume_high" ]
-                  ,"response": " "}
-,"constant_subtractions":
-                  {"text": "Subtract constant ...................... <"
-                  ,"type": "checkbox"
-                  ,"response": "N"}
-,"averaged_tail":
-                  {"text": "Averaged tail intensity is ............."
-                  ,"type": "float"
-                  ,"response": " "}
-,"background_min":
-                  {"text": "Minimum relative background ............ <"
-                  ,"type": "float"
-                  ,"response": -0.5}
-,"background_max":
-                  {"text": "Maximum relative background ............ <"
-                  ,"type": "float"
-                  ,"response": 0.5}
+    "enter_your_option":
+    {"text": "Enter your option ........."
+     ,"type": "integer"
+     ,"response": "0" }
+    ,"pdb":           
+    {"text": "Brookhaven file name ................... <"
+     ,"type": "file"
+     ,"response": ""}
+    ,"experimental_curve":
+    {"text": "Enter data file ......................"
+     ,"type": "file"
+     ,"response": "N"}
+    ,"savfile":       
+    {"text": "Save file name ......................... <"
+     ,"type": "file"
+     ,"response": " "}
+    ,"chain_id":      
+    {"text": "Process chain (0: all chains) ...."
+     ,"type": "integer"
+     , "response": ""}
+    ,"maxharmonics":  
+    {"text": "Maximum order of  harmonics ........... <"
+     ,"type": "integer"
+     ,"response": 15}
+    ,"fibonacci_grid":
+    {"text": "Order of Fibonacci grid ............... <"
+     ,"type": "integer"
+     ,"response": 17}
+    ,"qmax":          
+    {"text": "Maximum s value ........................ <"
+     ,"response": 0.5
+     ,"type": "float"
+     ,"info": "use for calc mode"}
+    ,"smax":          
+    {"text": "Smax in the fitting range .............. <"
+     ,"type": "float"
+     ,"response": ""
+     ,"info": "use for fit and scan mode"}
+    ,"number_of_points":
+    {"text": "Number of points ..............."
+     ,"type": "integer"
+     , "response": ""}
+    ,"explicit_hydrogen":
+    {"text": "Account for explicit hydrogens?"
+     ,"type": "checkbox"
+     , "response": "N"}
+    ,"fit_curve":     
+    {"text": "Fit the experimental curve"
+     ,"type": "character"
+     ,"response": "Y"}
+    ,"solvation_density":
+    {"text": "Electron density of the solvent, e/A**3  <"
+     ,"type": "float"
+     ,"response": ""}
+    ,"angular_units": 
+    {"text": "2 *  sin(theta)/lambda [1/nm]  (4) ....."
+     ,"type": "listbox"
+     ,"response": ""}
+    ,"plot_fit":      
+    {"text": "Plot the fit [ Y / N ]"
+     ,"type": "character"
+     ,"response": "N"}
+    ,"set_parameters":
+    {"text": "Another set of parameters [ Y / N ] ...."
+     ,"type": "character"
+     ,"response": "N"
+     ,"min": 0
+    }
+    ,"minimize_again":
+    {"text": "Minimize again with new limits [ Y / N ] <"
+     ,"type": "boolean"
+     ,"response": "Y"}
+    ,"fit_contrast_hydration_low":
+    {"text": "Minimum contrast in the shell .......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fit_contrast_hydration_high":
+    {"text": "Maximum contrast in the shell .......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fix_contrast_hydration":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_contrast_hydration_low", "fit_contrast_hydration_high" ]
+     ,"response": " "}
+    ,"scan_contrast_hydration_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_contrast_hydration_low" ]
+     ,"response": " "}
+    ,"scan_contrast_hydration_high":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_contrast_hydration_high" ]
+     ,"response": " "}
+    ,"fit_atomic_radius_low":
+    {"text": "Minimum radius of atomic group ......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fit_atomic_radius_high": 
+    {"text": "Maximum radius of atomic group ......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fix_atomic_radius":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_atomic_radius_low", "fit_atomic_radius_high" ]
+     ,"response": " "}
+    ,"scan_atomic_radius_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_atomic_radius_low" ]
+     ,"response": " "}
+    ,"scan_atomic_radius_high":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_atomic_radius_high" ]
+     ,"response": " "}
+    ,"fit_excluded_volume_low":
+    {"text": "Minimum excluded volume ................ <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fit_excluded_volume_high":
+    {"text": "Maximum excluded volume ................ <"
+     ,"type": "float"
+     ,"response": " " }
+    ,"fix_excluded_volume":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_excluded_volume_low", "fit_excluded_volume_high" ]
+     ,"response": " "}
+    ,"scan_excluded_volume_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_excluded_volume_low" ]
+     ,"response": " "}
+    ,"scan_excluded_volume_high":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "fit_excluded_volume_high" ]
+     ,"response": " "}
+    ,"constant_subtractions":
+    {"text": "Subtract constant ...................... <"
+     ,"type": "checkbox"
+     ,"response": "N"}
+    ,"averaged_tail":
+    {"text": "Averaged tail intensity is ............."
+     ,"type": "float"
+     ,"response": " "}
+    ,"background_min":
+    {"text": "Minimum relative background ............ <"
+     ,"type": "float"
+     ,"response": -0.5}
+    ,"background_max":
+    {"text": "Maximum relative background ............ <"
+     ,"type": "float"
+     ,"response": 0.5}
 };
 
 var app_texts_scan = {
-"enter_your_option":
-                  {"text": "Enter your option ........."
-                  ,"type": "integer"
-                  ,"response": "0" }
-,"pdb":
-                  {"text": "Brookhaven file name ................... <"
-                  ,"type": "file"
-                  ,"response": ""}
-,"experimental_curve":
-                  {"text": "Enter data file ......................"
-                  ,"type": "file"
-                  ,"response": "N"}
-,"savfile":
-                  {"text": "Save file name ......................... <"
-                  ,"type": "file"
-                  ,"response": " "}
-,"chain_id":
-                  {"text": "Process chain (0: all chains) ...."
-                  ,"type": "integer"
-                  , "response": ""}
-,"maxharmonics":
-                  {"text": "Maximum order of  harmonics ........... <"
-                  ,"type": "integer"
-                  ,"response": 15}
-,"fibonacci_grid":
-                  {"text": "Order of Fibonacci grid ............... <"
-                  ,"type": "integer"
-                  ,"response": 17}
-,"qmax":
-                  {"text": "Maximum s value ........................ <"
-                   ,"response": 0.5
-                   ,"type": "float"
-                   ,"info": "use for calc mode"}
-,"smax":
-                  {"text": "Smax in the fitting range .............. <"
-                  ,"type": "float"
-                  ,"response": ""
-                  ,"info": "use for fit and scan mode"}
-,"number_of_points":
-                  {"text": "Number of points ..............."
-                  ,"type": "integer"
-                   , "response": ""}
-,"explicit_hydrogen":
-                  {"text": "Account for explicit hydrogens?"
-                  ,"type": "checkbox"
-                  , "response": "N"}
-,"fit_curve":
-                  {"text": "Fit the experimental curve"
-                  ,"type": "character"
-                  ,"response": "Y"}
-,"solvation_density":
-                  {"text": "Electron density of the solvent, e/A**3  <"
-                  ,"type": "float"
-                  ,"response": ""}
-,"angular_units":
-                  {"text": "2 *  sin(theta)/lambda [1/nm]  (4) ....."
-                  ,"type": "listbox"
-                  ,"response": ""}
-,"plot_fit":
-                  {"text": "Plot the fit [ Y / N ]"
-                  ,"type": "character"
-                  ,"response": "N"}
-,"set_parameters":
-                  {"text": "Another set of parameters [ Y / N ] ...."
-                  ,"type": "character"
-                  ,"response": "N"
-                  ,"min": 0
-                  }
-,"minimize_again":
-                  {"text": "Minimize again with new limits [ Y / N ] <"
-                  ,"type": "boolean"
-                  ,"response": "Y"}
-,"scan_contrast_hydration_low":
-                  {"text": "Minimum contrast in the shell .......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"scan_contrast_hydration_high":
-                  {"text": "Maximum contrast in the shell .......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"scan_contrast_hydration_points":
-                  {"text" : "PLACE HOLDER"
-                   ,"type": "integer"
-                   ,"response": 0 } // 1 is used as flag to exclude from scanning 
-,"scan_contrast_hydration_interval":
-                  {"text" : "PLACE HOLDER"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fix_contrast_hydration":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_contrast_hydration_low", "scan_contrast_hydration_high" ]
-                  ,"response": " "
-                  }
-,"fit_contrast_hydration_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_contrast_hydration_low" ]
-                  ,"response": " "
-                  }
-,"fit_contrast_hydration_high":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_contrast_hydration_high" ]
-                  ,"response": " "
-                  }
-,"scan_atomic_radius_low":
-                  {"text": "Minimum radius of atomic group ......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"scan_atomic_radius_high":
-                  {"text": "Maximum radius of atomic group ......... <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"scan_atomic_radius_points":
-                  {"text" : "PLACE HOLDER"
-                  ,"type": "integer"
-                  ,"response": 0 }
-,"scan_atomic_radius_interval":
-                  {"text" : "PLACE HOLDER"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fix_atomic_radius":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_atomic_radius_low", "scan_atomic_radius_high" ]
-                  ,"response": " "
-                  }
-,"fit_atomic_radius_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_atomic_radius_low" ]
-                  ,"response": " "
-                  }
-,"fit_atomic_radius_high":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_atomic_radius_high" ]
-                  ,"response": " "
-                  }
-,"scan_excluded_volume_low":
-                  {"text": "Minimum excluded volume ................ <"
-                  ,"type": "float"
-                  ,"response": " "}
-,"scan_excluded_volume_high":
-                  {"text": "Maximum excluded volume ................ <"
-                  ,"type": "float"
-                  ,"response": " " }
-,"scan_excluded_volume_points":
-                  {"text" : "PLACE HOLDER"
-                  ,"type": "integer"
-                  ,"response": 0 }
-,"scan_excluded_volume_interval":
-                  {"text" : "PLACE HOLDER"
-                  ,"type": "float"
-                  ,"response": " "}
-,"fix_excluded_volume":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_excluded_volume_low", "scan_excluded_volume_high" ]
-                  ,"response": " "
-                  }
-,"fit_excluded_volume_low":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_excluded_volume_low" ]
-                  ,"response": " "
-                  }
-,"fit_excluded_volume_high":
-                  {"text": "DUMMY PLACE HOLDER"
-                  ,"id": [ "scan_excluded_volume_high" ]
-                  ,"response": " "
-                  }
-,"constant_subtractions":
-                  {"text": "Subtract constant ...................... <"
-                  ,"type": "checkbox"
-                  ,"response": "N"}
-,"averaged_tail":
-                  {"text": "Averaged tail intensity is ............."
-                  ,"type": "float"
-                  ,"response": " "}
-,"background_min":
-                  {"text": "Minimum relative background ............ <"
-                  ,"type": "float"
-                  ,"response": -0.5}
-,"background_max":
-                  {"text": "Maximum relative background ............ <"
-                  ,"type": "float"
-                  ,"response": 0.5}
+    "enter_your_option":
+    {"text": "Enter your option ........."
+     ,"type": "integer"
+     ,"response": "0" }
+    ,"pdb":
+    {"text": "Brookhaven file name ................... <"
+     ,"type": "file"
+     ,"response": ""}
+    ,"experimental_curve":
+    {"text": "Enter data file ......................"
+     ,"type": "file"
+     ,"response": "N"}
+    ,"savfile":
+    {"text": "Save file name ......................... <"
+     ,"type": "file"
+     ,"response": " "}
+    ,"chain_id":
+    {"text": "Process chain (0: all chains) ...."
+     ,"type": "integer"
+     , "response": ""}
+    ,"maxharmonics":
+    {"text": "Maximum order of  harmonics ........... <"
+     ,"type": "integer"
+     ,"response": 15}
+    ,"fibonacci_grid":
+    {"text": "Order of Fibonacci grid ............... <"
+     ,"type": "integer"
+     ,"response": 17}
+    ,"qmax":
+    {"text": "Maximum s value ........................ <"
+     ,"response": 0.5
+     ,"type": "float"
+     ,"info": "use for calc mode"}
+    ,"smax":
+    {"text": "Smax in the fitting range .............. <"
+     ,"type": "float"
+     ,"response": ""
+     ,"info": "use for fit and scan mode"}
+    ,"number_of_points":
+    {"text": "Number of points ..............."
+     ,"type": "integer"
+     , "response": ""}
+    ,"explicit_hydrogen":
+    {"text": "Account for explicit hydrogens?"
+     ,"type": "checkbox"
+     , "response": "N"}
+    ,"fit_curve":
+    {"text": "Fit the experimental curve"
+     ,"type": "character"
+     ,"response": "Y"}
+    ,"solvation_density":
+    {"text": "Electron density of the solvent, e/A**3  <"
+     ,"type": "float"
+     ,"response": ""}
+    ,"angular_units":
+    {"text": "2 *  sin(theta)/lambda [1/nm]  (4) ....."
+     ,"type": "listbox"
+     ,"response": ""}
+    ,"plot_fit":
+    {"text": "Plot the fit [ Y / N ]"
+     ,"type": "character"
+     ,"response": "N"}
+    ,"set_parameters":
+    {"text": "Another set of parameters [ Y / N ] ...."
+     ,"type": "character"
+     ,"response": "N"
+     ,"min": 0
+    }
+    ,"minimize_again":
+    {"text": "Minimize again with new limits [ Y / N ] <"
+     ,"type": "boolean"
+     ,"response": "Y"}
+    ,"scan_contrast_hydration_low":
+    {"text": "Minimum contrast in the shell .......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"scan_contrast_hydration_high":
+    {"text": "Maximum contrast in the shell .......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"scan_contrast_hydration_points":
+    {"text" : "PLACE HOLDER"
+     ,"type": "integer"
+     ,"response": 0 } // 1 is used as flag to exclude from scanning 
+    ,"scan_contrast_hydration_interval":
+    {"text" : "PLACE HOLDER"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fix_contrast_hydration":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_contrast_hydration_low", "scan_contrast_hydration_high" ]
+     ,"response": " "
+    }
+    ,"fit_contrast_hydration_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_contrast_hydration_low" ]
+     ,"response": " "
+    }
+    ,"fit_contrast_hydration_high":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_contrast_hydration_high" ]
+     ,"response": " "
+    }
+    ,"scan_atomic_radius_low":
+    {"text": "Minimum radius of atomic group ......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"scan_atomic_radius_high":
+    {"text": "Maximum radius of atomic group ......... <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"scan_atomic_radius_points":
+    {"text" : "PLACE HOLDER"
+     ,"type": "integer"
+     ,"response": 0 }
+    ,"scan_atomic_radius_interval":
+    {"text" : "PLACE HOLDER"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fix_atomic_radius":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_atomic_radius_low", "scan_atomic_radius_high" ]
+     ,"response": " "
+    }
+    ,"fit_atomic_radius_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_atomic_radius_low" ]
+     ,"response": " "
+    }
+    ,"fit_atomic_radius_high":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_atomic_radius_high" ]
+     ,"response": " "
+    }
+    ,"scan_excluded_volume_low":
+    {"text": "Minimum excluded volume ................ <"
+     ,"type": "float"
+     ,"response": " "}
+    ,"scan_excluded_volume_high":
+    {"text": "Maximum excluded volume ................ <"
+     ,"type": "float"
+     ,"response": " " }
+    ,"scan_excluded_volume_points":
+    {"text" : "PLACE HOLDER"
+     ,"type": "integer"
+     ,"response": 0 }
+    ,"scan_excluded_volume_interval":
+    {"text" : "PLACE HOLDER"
+     ,"type": "float"
+     ,"response": " "}
+    ,"fix_excluded_volume":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_excluded_volume_low", "scan_excluded_volume_high" ]
+     ,"response": " "
+    }
+    ,"fit_excluded_volume_low":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_excluded_volume_low" ]
+     ,"response": " "
+    }
+    ,"fit_excluded_volume_high":
+    {"text": "DUMMY PLACE HOLDER"
+     ,"id": [ "scan_excluded_volume_high" ]
+     ,"response": " "
+    }
+    ,"constant_subtractions":
+    {"text": "Subtract constant ...................... <"
+     ,"type": "checkbox"
+     ,"response": "N"}
+    ,"averaged_tail":
+    {"text": "Averaged tail intensity is ............."
+     ,"type": "float"
+     ,"response": " "}
+    ,"background_min":
+    {"text": "Minimum relative background ............ <"
+     ,"type": "float"
+     ,"response": -0.5}
+    ,"background_max":
+    {"text": "Maximum relative background ............ <"
+     ,"type": "float"
+     ,"response": 0.5}
 };
 
 var temp_response = {};
 var scan_table = {
-     "contrast_hydration" :  {
-                              "mode" : "contrast_hydration_mode"
-                              ,"low"    : "scan_contrast_hydration_low"
-                              ,"high"    : "scan_contrast_hydration_high"
-                              ,"interval"    : "scan_contrast_hydration_interval"
-                              ,"points"    : "scan_contrast_hydration_points"
-                              ,"scale"     : 1.0
-                             }
+    "contrast_hydration" :  {
+        "mode" : "contrast_hydration_mode"
+        ,"low"    : "scan_contrast_hydration_low"
+        ,"high"    : "scan_contrast_hydration_high"
+        ,"interval"    : "scan_contrast_hydration_interval"
+        ,"points"    : "scan_contrast_hydration_points"
+        ,"scale"     : 1.0
+    }
     ,"atomic_radius"      :  {
-                              "mode" : "atomic_radius_mode" 
-                              ,"low"    : "scan_atomic_radius_low"
-                              ,"high"    : "scan_atomic_radius_high"
-                              ,"interval"    : "scan_atomic_radius_interval"
-                              ,"points"    : "scan_atomic_radius_points"
-                              ,"scale"     : 1.0
-                             }
+        "mode" : "atomic_radius_mode" 
+        ,"low"    : "scan_atomic_radius_low"
+        ,"high"    : "scan_atomic_radius_high"
+        ,"interval"    : "scan_atomic_radius_interval"
+        ,"points"    : "scan_atomic_radius_points"
+        ,"scale"     : 1.0
+    }
     ,"excluded_volume"    : {
-                              "mode" : "excluded_volume_mode"
-                              ,"low"    : "scan_excluded_volume_low"
-                              ,"high"    : "scan_excluded_volume_high"
-                              ,"interval"    : "scan_excluded_volume_interval"
-                              ,"points"    : "scan_excluded_volume_points"
-                              ,"scale"     : 1.0
-                             }
+        "mode" : "excluded_volume_mode"
+        ,"low"    : "scan_excluded_volume_low"
+        ,"high"    : "scan_excluded_volume_high"
+        ,"interval"    : "scan_excluded_volume_interval"
+        ,"points"    : "scan_excluded_volume_points"
+        ,"scale"     : 1.0
+    }
 }
 
 
-var scan_variables = [];
-var scan_variables_low = [];
-var scan_variables_high = [];
+var scan_variables          = [];
+var scan_variables_low      = [];
+var scan_variables_high     = [];
 var scan_variables_interval = [];
-var scan_variables_points = [];
-var scan_variables_scale = [];
+var scan_variables_points   = [];
+var scan_variables_scale    = [];
 
-var nonscan_variables = [];
-var scan_outfiles = [];
+var nonscan_variables       = [];
+var scan_outfiles           = [];
 
 function setup_scan() {
     return new Promise ( (resolve, reject) => { 
 
-    dmsg( "setup_scan()" );
-    dmsg( "scan_table\n" + JSON.stringify( scan_table, null, 2 ) );
-    try {
+        dmsg( "setup_scan()" );
+        dmsg( "scan_table\n" + JSON.stringify( scan_table, null, 2 ) );
+        try {
 
-    for ( opt in scan_table ) {
-        if ( scan_table[ opt ][ "mode" ] in req ) {
-            if ( req [scan_table[ opt ][ "mode" ]] == "4" || req [scan_table[ opt ][ "mode" ]] == "5" ) {
-                scan_variables.push( opt );
-                scan_variables_low.push( scan_table[ opt ][ "low" ] );
-                scan_variables_high.push( scan_table[ opt ][ "high" ] );
-                scan_variables_interval.push( scan_table[ opt ][ "interval" ] );
-                scan_variables_points.push( scan_table[ opt ][ "points" ] );
-                scan_variables_scale.push( scan_table[ opt ][ "scale" ] );
+            for ( opt in scan_table ) {
+                if ( scan_table[ opt ][ "mode" ] in req ) {
+                    if ( req [scan_table[ opt ][ "mode" ]] == "4" || req [scan_table[ opt ][ "mode" ]] == "5" ) {
+                        scan_variables.push( opt );
+                        scan_variables_low.push( scan_table[ opt ][ "low" ] );
+                        scan_variables_high.push( scan_table[ opt ][ "high" ] );
+                        scan_variables_interval.push( scan_table[ opt ][ "interval" ] );
+                        scan_variables_points.push( scan_table[ opt ][ "points" ] );
+                        scan_variables_scale.push( scan_table[ opt ][ "scale" ] );
+                    };
+                } else {
+                    nonscan_variables.push( opt );
+                };
+                
+                //        };
             };
-        } else {
-            nonscan_variables.push( opt );
-        };
-       
-//        };
-    };
-    var num_scan = scan_variables.length;
+            var num_scan = scan_variables.length;
 
-    dmsg( "scan_variables: " + JSON.stringify( scan_variables ) );
+            dmsg( "scan_variables: " + JSON.stringify( scan_variables ) );
 
-    for ( var i=0; i < nonscan_variables.length; i++ ) {
-        scan_variables.push( nonscan_variables[ i ] );
-        scan_variables_low.push( scan_table[ nonscan_variables[ i ] ][ "low" ] );
-        scan_variables_high.push( scan_table[ nonscan_variables[ i ] ][ "high" ] );
-        scan_variables_interval.push( scan_table[ nonscan_variables[ i ] ][ "interval" ] );
-        scan_variables_points.push( scan_table[ nonscan_variables[ i ] ][ "points" ] );
-        scan_variables_scale.push( scan_table[ nonscan_variables[ i ] ][ "scale" ] );
-    };
+            for ( var i=0; i < nonscan_variables.length; i++ ) {
+                scan_variables.push( nonscan_variables[ i ] );
+                scan_variables_low.push( scan_table[ nonscan_variables[ i ] ][ "low" ] );
+                scan_variables_high.push( scan_table[ nonscan_variables[ i ] ][ "high" ] );
+                scan_variables_interval.push( scan_table[ nonscan_variables[ i ] ][ "interval" ] );
+                scan_variables_points.push( scan_table[ nonscan_variables[ i ] ][ "points" ] );
+                scan_variables_scale.push( scan_table[ nonscan_variables[ i ] ][ "scale" ] );
+            };
 
-    if ( num_scan == 1 ) {
-        var filename = scan_variables[ 0 ].toString() + ".csv";
-        scan_outfiles.push( filename );
-    } else {
-        for ( var i=0; i < num_scan - 1; i++ ) {
-            for ( var j=i+1; j < num_scan; j++ ) {
-                var filename = scan_variables[ i ].toString() + "-" + scan_variables[ j ].toString() + ".csv";
+            if ( num_scan == 1 ) {
+                var filename = scan_variables[ 0 ].toString() + ".csv";
                 scan_outfiles.push( filename );
+            } else {
+                for ( var i=0; i < num_scan - 1; i++ ) {
+                    for ( var j=i+1; j < num_scan; j++ ) {
+                        var filename = scan_variables[ i ].toString() + "-" + scan_variables[ j ].toString() + ".csv";
+                        scan_outfiles.push( filename );
+                    };
+                };
             };
-        };
-    };
 
-    console.log ( "Scanning parameters\n");
-    dmsg        ( "scan_variables: " + JSON.stringify( scan_variables) + "\n");
-    console.log ( "scan_variables_low: " + JSON.stringify( scan_variables_low ) + "\n");
-    console.log ( "scan_variables_high: " + JSON.stringify( scan_variables_high ) + "\n");
-    dmsg        ( "scan_variables_interval: " + JSON.stringify( scan_variables_interval ) + "\n");
-    console.log ( "scan_variables_points: " + JSON.stringify( scan_variables_points ) + "\n");
-    dmsg        ( "scan_variables_scale: " + JSON.stringify( scan_variables_scale ) + "\n");
-    dmsg        ( "scan_outfiles: " + JSON.stringify( scan_outfiles ) + "\n");
-    debug && process.exit(-1);
-    resolve( num_scan );
-    } catch ( error ) {
-       reject( error.message ); 
-    };
-    
+            console.log ( "Scanning parameters\n");
+            dmsg        ( "scan_variables: " + JSON.stringify( scan_variables) + "\n");
+            console.log ( "scan_variables_low: " + JSON.stringify( scan_variables_low ) + "\n");
+            console.log ( "scan_variables_high: " + JSON.stringify( scan_variables_high ) + "\n");
+            dmsg        ( "scan_variables_interval: " + JSON.stringify( scan_variables_interval ) + "\n");
+            console.log ( "scan_variables_points: " + JSON.stringify( scan_variables_points ) + "\n");
+            dmsg        ( "scan_variables_scale: " + JSON.stringify( scan_variables_scale ) + "\n");
+            dmsg        ( "scan_outfiles: " + JSON.stringify( scan_outfiles ) + "\n");
+            debug && process.exit(-1);
+            resolve( num_scan );
+        } catch ( error ) {
+            reject( error.message ); 
+        };
+        
     });
 }
 
@@ -1398,10 +1399,10 @@ function generate_scan_array( ntotal, nscan ){
                 };
             };
         };
-   };
-   dmsg( 'newarray:\n' + JSON.stringify( newarray ) );
-   debug && process.exit();
-   return newarray;
+    };
+    dmsg( 'newarray:\n' + JSON.stringify( newarray ) );
+    debug && process.exit();
+    return newarray;
 }
 
 var chi2_scan = [];
