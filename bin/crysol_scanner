@@ -1,5 +1,41 @@
 #! /usr/local/bin/node 
 
+// ----------------------------------------------------------------------------------------------------------
+// background
+// ----------------------------------------------------------------------------------------------------------
+// runs crysol one time in various scan modes
+// notes are a work in progress, added to as needed by discovery
+// ----------------------------------------------------------------------------------------------------------
+// summary of data structures
+// ----------------------------------------------------------------------------------------------------------
+// hard-coded:
+// app_texts_calc - object of texts for interacting with command line mode of CRYSOL
+// app_texts_fit  - object of texts for interacting with command line mode of CRYSOL
+// app_texts_scan - object of texts for interacting with command line mode of CRYSOL
+// scan_table     - object of scan types and their mode/low/high/interval/points/scale for lookups
+
+// ----------------------------------------------------------------------------------------------------------
+// summary of functions
+// ----------------------------------------------------------------------------------------------------------
+// crysol_runner()       - main entry point,
+//                       - calls calc_runner(), fit_runner() or scan_runner()
+// initialize()          - processes data in request and adjusts values in apt_texts_{calc,fit,scan} to populate with req values
+//                       - called by crysol_runner()
+// scanning components:
+// scan_runner()         - starts scan running
+//                       - calls setup_scan(), generate_scan_array(), readfile_log(), span_scan_runner(), write_chi2()
+// setup_scan()          - populates arrays scan_variables* 
+// generate_scan_array() - 
+
+
+const debug = false;
+dmsg = function( msg ) {
+    if ( !debug ) {
+        return;
+    }
+    console.log( msg );
+}
+
 const fs = require('fs');
 const util = require('util');
 promisify = util.promisify;
@@ -9,6 +45,7 @@ const exec = require('child_process').exec;
 const p_exec = promisify( require( 'child_process' ).exec ) ;
 
 const { PerformanceObserver, performance } = require('perf_hooks');
+const scandata = require( "./scandata.js" );
 
 var input_from_ui = process.argv[ 2 ];
 var req_original = JSON.parse( input_from_ui );
@@ -707,8 +744,9 @@ async function scan_runner() {
     var nscans = await setup_scan();
 
     var ndx_scan = generate_scan_array( 3, nscans );
-//    console.log ( "Scannina parameters = " + nscans + " : " + ndx_scan + "\n");
+//    console.log ( "Scanning parameters = " + nscans + " : " + ndx_scan + "\n");
     var maxscansteps = ndx_scan.length;
+    
 //    console.log ( "##### Total scanning parameters = " + maxscansteps + "\n" );
 
     result += await spawn_scan_runner( ndx_scan, maxscansteps );
@@ -1260,6 +1298,8 @@ var scan_outfiles = [];
 function setup_scan() {
     return new Promise ( (resolve, reject) => { 
 
+    dmsg( "setup_scan()" );
+    dmsg( "scan_table\n" + JSON.stringify( scan_table, null, 2 ) );
     try {
 
     for ( opt in scan_table ) {
@@ -1279,6 +1319,8 @@ function setup_scan() {
 //        };
     };
     var num_scan = scan_variables.length;
+
+    dmsg( "scan_variables: " + JSON.stringify( scan_variables ) );
 
     for ( var i=0; i < nonscan_variables.length; i++ ) {
         scan_variables.push( nonscan_variables[ i ] );
@@ -1302,10 +1344,14 @@ function setup_scan() {
     };
 
     console.log ( "Scanning parameters\n");
-    console.log ( JSON.stringify( scan_variables) + "\n");
-    console.log ( JSON.stringify( scan_variables_low ) + "\n");
-    console.log ( JSON.stringify( scan_variables_high ) + "\n");
-    console.log ( JSON.stringify( scan_variables_points ) + "\n");
+    dmsg        ( "scan_variables: " + JSON.stringify( scan_variables) + "\n");
+    console.log ( "scan_variables_low: " + JSON.stringify( scan_variables_low ) + "\n");
+    console.log ( "scan_variables_high: " + JSON.stringify( scan_variables_high ) + "\n");
+    dmsg        ( "scan_variables_interval: " + JSON.stringify( scan_variables_interval ) + "\n");
+    console.log ( "scan_variables_points: " + JSON.stringify( scan_variables_points ) + "\n");
+    dmsg        ( "scan_variables_scale: " + JSON.stringify( scan_variables_scale ) + "\n");
+    dmsg        ( "scan_outfiles: " + JSON.stringify( scan_outfiles ) + "\n");
+    debug && process.exit(-1);
     resolve( num_scan );
     } catch ( error ) {
        reject( error.message ); 
@@ -1314,9 +1360,19 @@ function setup_scan() {
     });
 }
 
+/**
+ * creates an array of indices to scan parameters
+ * @param {Number} total number of parameters (possible?) to scan
+ * @param {Number} total number of scans
+ * @returns {Array<Array<Number>>} indices ?
+ */
 function generate_scan_array( ntotal, nscan ){
     var newarray = [];
 
+    dmsg( `generate_scan_array( ntotal=${ntotal}, nscan=${nscan})` );
+    dmsg( 'scan_variables_points\n' + JSON.stringify( scan_variables_points ) );
+    
+    dmsg( "generate_scan_array\n" + JSON.stringify( app_texts_scan, null, 2 ) );
     if ( nscan == 1 ) {
         var imax = app_texts_scan[ scan_variables_points[ 0 ] ][ "response" ];
         for ( var i=0; i < imax ; i++ ) {
@@ -1343,6 +1399,8 @@ function generate_scan_array( ntotal, nscan ){
             };
         };
    };
+   dmsg( 'newarray:\n' + JSON.stringify( newarray ) );
+   debug && process.exit();
    return newarray;
 }
 
