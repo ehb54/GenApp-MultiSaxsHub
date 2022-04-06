@@ -2296,7 +2296,6 @@ var chi_square = [];
 var chi_square_reduced = [];
 var chi_square_pierson = [];
 
-
 async function prep_plot_JSON_all( ) {
 // Initialize Iq_ALL and Iq_exp_data
   
@@ -2354,7 +2353,6 @@ async function prep_plot_JSON_all( ) {
    };   
 
 }
-
 
 var chi2_reduced_obj = {};
 function getIqJSON_all( ) {

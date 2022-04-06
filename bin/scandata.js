@@ -25,8 +25,11 @@ exports.list = function() {
 
 exports.setdata = function( obj, val ) {
     // obj [ p1index, p2index, .., pnidex ]
+    if ( typeof obj === 'number' ) {
+        obj = index2obj( obj );
+    }
     if ( obj.length != scanobj.param_offsets.length ) {
-        console.error( `index(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
+        console.error( `setdata(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
         process.exit(-1);
     }
     scanobj.data = scanobj.data || [];
@@ -34,13 +37,33 @@ exports.setdata = function( obj, val ) {
 }    
 
 exports.data = function( obj ) {
+    if ( typeof obj === 'number' ) {
+        obj = index2obj( obj );
+    }
     // obj [ p1index, p2index, .., pnidex ]
     if ( obj.length != scanobj.param_offsets.length ) {
-        console.error( `index(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
+        console.error( `data(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
         process.exit(-1);
     }
     return scanobj.data[ index(obj) ];
 }    
+
+exports.indices = function( obj ) {
+    if ( typeof obj === 'number' ) {
+        obj = index2obj( obj );
+    }
+    // obj [ p1index, p2index, .., pnidex ]
+    if ( obj.length != scanobj.param_offsets.length ) {
+        console.error( `indices(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
+        process.exit(-1);
+    }
+    var res = [];
+    for ( var i = 0; i < obj.length; ++i ) {
+        res.push( scanobj.parameters[i].val[obj[i]] );
+    }
+        
+    return res;
+}
 
 exports.indextest = function() {
     if ( !scanobj.parameters.length ) {
@@ -51,17 +74,14 @@ exports.indextest = function() {
     console.log( `indextest(): total points ${scanobj.datapoints}` );
 
     for ( var i = 0; i < scanobj.datapoints; ++i ) {
-        var obj = [];
-        var remainder = i;
-        for ( var j = scanobj.parameters.length - 1; j >= 0; --j ) {
-            obj.unshift( j ? Math.floor( remainder / scanobj.param_offsets[j] ) : remainder );
-            remainder = remainder % scanobj.param_offsets[j];
-        }
+        var obj = index2obj( i );
         if ( i != index(obj) ) {
             console.error( `error: ${i} --> ` + JSON.stringify(obj) + ' --> ' + index(obj) );
             return false;
         }
+        console.log( `indices for ${i} ` + JSON.stringify(exports.indices(i)) );
     }
+
     console.log( 'indextest(): all mappings ok' );
     return true;
 }
@@ -174,4 +194,14 @@ index = function( obj ) {
         result += obj[i] * scanobj.param_offsets[i];
     }
     return result;
+}
+
+index2obj = function( i ) {
+    var obj = [];
+    var remainder = i;
+    for ( var j = scanobj.parameters.length - 1; j >= 0; --j ) {
+        obj.unshift( j ? Math.floor( remainder / scanobj.param_offsets[j] ) : remainder );
+        remainder = remainder % scanobj.param_offsets[j];
+    }
+    return obj;
 }

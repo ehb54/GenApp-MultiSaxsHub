@@ -17,23 +17,32 @@
 // ----------------------------------------------------------------------------------------------------------
 // summary of functions
 // ----------------------------------------------------------------------------------------------------------
-// crysol_runner()       - main entry point,
-//                       - calls calc_runner(), fit_runner() or scan_runner()
-// initialize()          - processes data in request and adjusts values in apt_texts_{calc,fit,scan} to populate with req values
-//                       - called by crysol_runner()
+// crysol_runner()               - main entry point,
+//                               - calls calc_runner(), fit_runner() or scan_runner()
+// initialize()                  - processes data in request and adjusts values in apt_texts_{calc,fit,scan} to populate with req values
+//                               - called by crysol_runner()
 // scanning components:
-// scan_runner()         - starts scan running
-//                       - calls setup_scan(), generate_scan_array(), readfile_log(), span_scan_runner(), write_chi2()
-// setup_scan()          - populates arrays scan_variables* 
-// generate_scan_array() - 
+// scan_runner()                 - starts scan running
+//                               - calls setup_scan(), generate_scan_array(), readfile_log(), spawn_scan_runner(), write_chi2()
+// setup_scan()                  - populates arrays scan_variables* 
+//                               - called by scan_runner()
+// generate_scan_array()         - generates a set of indices for spawn_scan_runner()
+//                               - this is where we not initialize scandata parameter vectors
+//                               - called by scan_runner()
+// spawn_scan_runner()           - runs the scan
+//                               - calls get_response_scan_runner() on stdout receipts
+// get_response_scan_runner()    - handles stdout & builds response for stdin
+//                               - calls set_scan_variables_scanner()
+// set_scan_variables_scanner()  - sets variables from index array, appears the one is (set -1) is allowed to float
 
 
 const debug = false;
 dmsg = function( msg ) {
     if ( !debug ) {
-        return;
+        return false;
     }
     console.log( msg );
+    return true;
 }
 
 const fs                                       = require('fs');
@@ -377,15 +386,24 @@ function scan_parameter_report( res  ) {
 async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
     var response = '';
     var resstring = res.replace(/\s+/g,'').replace(/\h+/g,'').replace(/\-+/g,'');
+
+    0 && dmsg( "get_response_scan_runner()" );
+    0 && dmsg( "get_response_scan_runner() : res now       : " + res );
+    0 && dmsg( "get_response_scan_runner() : resstring now : " + resstring );
     
     for ( opt in app_texts_scan) {
+        0 && dmsg( "get_response_scan_runner() : opt now       : " + JSON.stringify( opt ) );
         var optstring = temp_response[ opt ][ "text" ].replace(/\s+/g,'').replace(/\h+/g,'');
+        0 && dmsg( "get_response_scan_runner() : optstring now : " + optstring );
         if ( resstring.indexOf(optstring) >= 0 ) {
+            dmsg( "get_response_scan_runner() : opt accepted       : " + JSON.stringify( opt ) );
             if ( opt == "set_parameters" ) {
                 response = "Y";
                 var currentstep = temp_response[ opt ][ "min" ] ;
                 if ( currentstep < maxscansteps ) {
+                    dmsg( `get_response_scan_runner() : set_scan_variables_scanner ndx_scan[ currentstep = ${currentstep}] ` + JSON.stringify( ndx_scan[ currentstep ] ) );
                     var result = await set_scan_variables_scanner( ndx_scan[ currentstep ] );
+                    0 && dmsg( "get_response_scan_runner() : temp_response : " + JSON.stringify( temp_response, null, 2 ) );
                 } else {
                     response = "N";
                 };
@@ -397,6 +415,7 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
             if ( opt == "plot_fit" ) {
                 var chi2 = res.toString().replace(/\n/g," ").split(" ");
                 chi2_scan.push( chi2[ chi2.indexOf('Chi\^2:') + 1] );
+                dmsg( `get_respons_scan_runner() : currentstep ${currentstep} chi2_scan ` + JSON.stringify( chi2_scan ) );
                 if ( temp_response[ "set_parameters" ][ "min" ] == 0 ) {
                     if ( "constant_subtractions" in req ) { 
                         app_texts_scan[ "constant_subtractions" ][ "response" ] = "Y";
@@ -582,7 +601,6 @@ function fill_chi2_2d( nscans, chi2_from_log) {
     });
 }
 
-
 function set_scan_variables_scanner( nbin ){
     return new Promise ( (resolve, reject) => {
         var result = '';
@@ -600,7 +618,8 @@ function set_scan_variables_scanner( nbin ){
                         parseFloat( app_texts_scan[ scan_variables_low[ i ] ][ "response" ] ) 
                         + parseFloat( app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] ) * parseInt( nbin[ i ] ); 
                 };
-                //            console.log(temp_response[ scan_variables_min[ i ] ][ "response" ], temp_response[ scan_variables_max[ i ] ][ "response" ], temp_response[ scan_variables_interval[ i ] ][ "response" ]);
+                dmsg( "set_scan_variables_scanner( " + JSON.stringify(nbin) + " min, max : "
+                      + temp_response[ scan_variables_low[ i ] ][ "response" ] + " " +  temp_response[ scan_variables_high[ i ] ][ "response" ] );
             };
             //        result += "UPDATE set_parameters DONE \n";
             resolve(result);
@@ -745,11 +764,12 @@ async function scan_runner() {
     var nscans = await setup_scan();
 
     var ndx_scan = generate_scan_array( 3, nscans );
+    dmsg( 'scan_runner() ndx_scan:\n' + JSON.stringify( ndx_scan ) );
     //    console.log ( "Scanning parameters = " + nscans + " : " + ndx_scan + "\n");
     var maxscansteps = ndx_scan.length;
     
     //    console.log ( "##### Total scanning parameters = " + maxscansteps + "\n" );
-
+    0 && debug && process.exit(-1);
     result += await spawn_scan_runner( ndx_scan, maxscansteps );
     scanstep += 1;
     var chi2_from_log = await readfile_log();
@@ -1352,7 +1372,7 @@ function setup_scan() {
             console.log ( "scan_variables_points: " + JSON.stringify( scan_variables_points ) + "\n");
             dmsg        ( "scan_variables_scale: " + JSON.stringify( scan_variables_scale ) + "\n");
             dmsg        ( "scan_outfiles: " + JSON.stringify( scan_outfiles ) + "\n");
-            debug && process.exit(-1);
+            0 && debug && process.exit(-1);
             resolve( num_scan );
         } catch ( error ) {
             reject( error.message ); 
@@ -1400,8 +1420,23 @@ function generate_scan_array( ntotal, nscan ){
             };
         };
     };
+
+    // alternate scan data setup
+
+    for ( var i = 0; i < nscan; ++i ) {
+        var tmpa = [];
+        for ( var j = 0; j < app_texts_scan[ scan_variables_points[ 0 ] ][ "response" ]; ++j ) {
+            tmpa.push( +app_texts_scan[ scan_variables_low[ i ] ][ "response" ]
+                       + +app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] * j );
+        }
+        
+        scandata.addparam( scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' ), tmpa );
+    }
+
+    dmsg( "scandata.list():" );
+    debug && scandata.list();
     dmsg( 'newarray:\n' + JSON.stringify( newarray ) );
-    debug && process.exit();
+    0 && debug && process.exit();
     return newarray;
 }
 
