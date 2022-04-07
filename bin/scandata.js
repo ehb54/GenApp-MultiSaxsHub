@@ -223,6 +223,10 @@ exports.contours = function( obj ) {
     console.log( "cart\n" + JSON.stringify( cart, null, 2 ) );
 
     // --> get start/end/size values for all plots
+    // min/max
+    var contour_start = Math.min(...scanobj.data);
+    var contour_end   = Math.max(...scanobj.data);
+    var contour_size  = (contour_end - contour_start ) / 10;
 
     var result           = {};
     result.data          = [];
@@ -244,8 +248,8 @@ exports.contours = function( obj ) {
 
         var this_data = 
             {
-                xaxis     : 'x' + pp1.toString()
-                ,yaxis    : 'y' + pp1.toString()
+                xaxis     : `x${pp1}`
+                ,yaxis    : `y${pp1}`
                 ,type     : "contour"
                 ,x        : scanobj.parameters[axes[0]].val
                 ,y        : scanobj.parameters[axes[1]].val
@@ -253,6 +257,9 @@ exports.contours = function( obj ) {
                 ,contours : {
                     coloring    : "heatmap"
                     ,showlabels : true
+                    ,start      : contour_start
+                    ,end        : contour_end
+                    ,size       : contour_size
                     ,labelfont  : {
                         color : "white"
                     }
@@ -273,7 +280,7 @@ exports.contours = function( obj ) {
         result.layout[ `yaxis${pp1}` ] =
             {
                 title   : scanobj.parameters[axes[1]].name
-                ,anchor : `x${pp1}`
+                ,anchor : `y${pp1}`
                 ,domain : [scanobj.parameters[axes[1]].val[1],scanobj.parameters[axes[1]].val[scanobj.parameters[axes[1]].val.length - 1]]
             }
         ;
@@ -283,7 +290,7 @@ exports.contours = function( obj ) {
                 point[ axes[0] ] = i;
                 point[ axes[1] ] = j;
                 console.log( `--> point ${p} values ` + JSON.stringify( point ) );
-                this_data.z[i] = this_data.z[i] || [];
+                this_data.z[i]    = this_data.z[i] || [];
                 this_data.z[i][j] = scanobj.data[ index( point ) ] 
             }
         }
