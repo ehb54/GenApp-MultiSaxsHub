@@ -13,9 +13,16 @@ exports.addparam = function( name, v ) {
     if ( scanobj.data && scanobj.data.length ) {
         scanobj.data = [];
     }
+    scanobj.name2index = scanobj.name2index || {};
     scanobj.parameters = scanobj.parameters || [];
-    scanobj.parameters.push( { name : name
-                               ,val : v } );
+
+    if ( name in scanobj.name2index ) {
+        console.warn( `addparam(): replacing previously assigned parameter name ${name}` );
+        scanobj.parameters[scanobj.name2index[name]].val = v;
+    } else {        
+        scanobj.parameters.push( { name : name
+                                   ,val : v } );
+    }
     compute_offsets();
 }
 
@@ -173,12 +180,162 @@ exports.plot2d = function( obj ) {
     console.log( JSON.stringify( result, null, 2 ) );
 }    
 
+exports.contours = function( obj ) {
+    // return contour plot data
+    // specifiy the names or indices of two parameters
+    
+    if ( obj.length != 2 ) {
+        console.error( `contours() : argument array length ${obj.length} is not two` );
+        process.exit(-1);
+    }
+
+    obj = obj.map( x => x in scanobj.name2index ? scanobj.name2index[x] : x );
+
+    if ( !obj.every( x => typeof x === 'number' && x >= 0 && x < scanobj.parameters.length ) ) {
+        console.error( 'contours() : argument array values do not provide valid indices ' + JSON.stringify( obj ) );
+        process.exit(-1);
+    }
+
+    if ( obj[0] == obj[1] ) {
+        console.error( 'contours() : argument array values have duplicate indices ' + JSON.stringify( obj ) );
+        process.exit(-1);
+    }
+        
+    console.log( "coutours ok - so far " + JSON.stringify( obj ) );
+
+    var axes = obj;
+    // now we need to loop through all indices not in axes
+
+    var fixed_axes       = [];
+    var fixed_axes_index = [];
+    for ( var i = 0; i < scanobj.parameters.length; ++i ) {
+        if ( axes.includes(i) ) {
+            continue;
+        }
+        fixed_axes      .push( [...Array(scanobj.parameters[i].val.length).keys() ] );
+        fixed_axes_index.push( i );
+    }
+
+    var cart = cartesian.apply(this, fixed_axes);
+
+    console.log( "fixed_axes\n" + JSON.stringify( fixed_axes, null, 2 ) );
+    console.log( "fixed_axes_index\n" + JSON.stringify( fixed_axes_index, null, 2 ) );
+    console.log( "cart\n" + JSON.stringify( cart, null, 2 ) );
+
+    // --> get start/end/size values for all plots
+
+    var result           = {};
+    result.data          = [];
+    result.layout        = {};
+    result.layout.title  = scanobj.title;
+    
+    for ( var p = 0; p < cart.length; ++p ) {
+        var point = [];
+        if ( typeof cart[p] === 'object' ) {
+            for ( var i = 0; i < cart[p].length; ++i ) {
+                point[ fixed_axes_index[ i ] ] = cart[p][i];
+            }
+        } else {
+            point[ fixed_axes_index[ 0 ] ] = cart[p];
+        }
+        console.log( `point ${p} values ` + JSON.stringify( point ) );
+
+        var pp1 = p + 1
+
+        var this_data = 
+            {
+                xaxis     : 'x' + pp1.toString()
+                ,yaxis    : 'y' + pp1.toString()
+                ,type     : "contour"
+                ,x        : scanobj.parameters[axes[0]].val
+                ,y        : scanobj.parameters[axes[1]].val
+                ,z        : []
+                ,contours : {
+                    coloring    : "heatmap"
+                    ,showlabels : true
+                    ,labelfont  : {
+                        color : "white"
+                    }
+                }
+                ,showscale  : false
+                ,colorscale : "Jet"
+            }
+        ;
+        
+        result.layout[ `xaxis${pp1}` ] =
+            {
+                title   : scanobj.parameters[axes[0]].name
+                ,anchor : `x${pp1}`
+                ,domain : [scanobj.parameters[axes[0]].val[0],scanobj.parameters[axes[0]].val[scanobj.parameters[axes[0]].val.length - 1]]
+            }
+        ;
+            
+        result.layout[ `yaxis${pp1}` ] =
+            {
+                title   : scanobj.parameters[axes[1]].name
+                ,anchor : `x${pp1}`
+                ,domain : [scanobj.parameters[axes[1]].val[1],scanobj.parameters[axes[1]].val[scanobj.parameters[axes[1]].val.length - 1]]
+            }
+        ;
+            
+        for ( var i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
+            for ( var j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
+                point[ axes[0] ] = i;
+                point[ axes[1] ] = j;
+                console.log( `--> point ${p} values ` + JSON.stringify( point ) );
+                this_data.z[i] = this_data.z[i] || [];
+                this_data.z[i][j] = scanobj.data[ index( point ) ] 
+            }
+        }
+
+        result.data.push( this_data );
+        break;
+    }
+
+    return result;
+
+    var result = {};
+    result.xlabel = scanobj.parameters[axes[0]].name;
+    result.ylabel = scanobj.parameters[axes[1]].name;
+
+    result.x = [];
+    result.y = [];
+    result.z = [];
+
+    for ( var i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
+        for ( var j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
+            result.x.push( scanobj.parameters[axes[0]].val[i] );
+            result.y.push( scanobj.parameters[axes[1]].val[j] );
+            obj[axes[0]] = i;
+            obj[axes[1]] = j;
+            result.v.push( scanobj.data[ index( obj ) ] );
+        }
+    }
+    console.log( JSON.stringify( result, null, 2 ) );
+}    
+
 exports.fillints = function() {
     // fill data with integers
+    scanobj.data = scanobj.data || [];
     for ( var i = 0; i < scanobj.datapoints; ++i ) {
         scanobj.data[i] = i;
     }
 }    
+
+exports.csv = function() {
+    var res = '';
+
+    for ( var i = 0; i < scanobj.parameters.length; ++i ) {
+        res += scanobj.parameters[i].name + ',';
+    }
+    res += ( scanobj.dataname ? scanobj.dataname : 'data' ) + '\n';
+
+    for ( var i = 0; i < scanobj.datapoints; ++i ) {
+        var indices = exports.indexvalues( i );
+        res += indices.map(String).join( ',' ) + ',' + scanobj.data[i] + '\n';
+    }
+    return res;
+}
 
 // *** private ***
   
@@ -187,9 +344,13 @@ var scanobj = {};
 const countOccurrences = (arr, val) => arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
 
 compute_offsets = function() {
-    // compute multipliers for each parameter & the number of datapoints
-    scanobj.param_offsets = [ 0 ];
+    // compute multipliers for each parameter & the number of datapoints & map parameters:name to index position
+    scanobj.name2index = {};
+    for ( var i = 0; i < scanobj.parameters.length; ++i ) {
+        scanobj.name2index[ scanobj.parameters[i].name ] = i;
+    }
     scanobj.datapoints = scanobj.parameters[0].val.length;
+    scanobj.param_offsets = [ 0 ];
     if ( scanobj.parameters.length == 1 ) {
         return;
     }
@@ -231,3 +392,6 @@ index2obj = function( i ) {
     }
     return obj;
 }
+
+// thanks https://stackoverflow.com/users/613198/rsp https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
+const cartesian = (...a) => a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
