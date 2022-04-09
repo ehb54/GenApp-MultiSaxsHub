@@ -60,7 +60,7 @@ exports.data = function( obj ) {
 
 exports.indexvalues = function( obj ) {
     if ( typeof obj === 'undefined' ) {
-        var res = [];
+        let res = [];
         for ( var i = 0; i < scanobj.datapoints; ++i ) {
             res.push( exports.indexvalues( i ) );
         }
@@ -74,8 +74,8 @@ exports.indexvalues = function( obj ) {
         console.error( `indexvalues(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
         process.exit(-1);
     }
-    var res = [];
-    for ( var i = 0; i < obj.length; ++i ) {
+    let res = [];
+    for ( let i = 0; i < obj.length; ++i ) {
         res.push( scanobj.parameters[i].val[obj[i]] );
     }
         
@@ -84,8 +84,8 @@ exports.indexvalues = function( obj ) {
 
 exports.indices = function( n ) {
     if ( typeof n === 'undefined' ) {
-        var res = [];
-        for ( var i = 0; i < scanobj.datapoints; ++i ) {
+        let res = [];
+        for ( let i = 0; i < scanobj.datapoints; ++i ) {
             res.push( exports.indices( i ) );
         }
         return res;
@@ -106,8 +106,8 @@ exports.indextest = function() {
 
     console.log( `indextest(): total points ${scanobj.datapoints}` );
 
-    for ( var i = 0; i < scanobj.datapoints; ++i ) {
-        var obj = index2obj( i );
+    for ( let i = 0; i < scanobj.datapoints; ++i ) {
+        const obj = index2obj( i );
         if ( i != index(obj) ) {
             console.error( `error: ${i} --> ` + JSON.stringify(obj) + ' --> ' + index(obj) );
             return false;
@@ -153,14 +153,14 @@ exports.plot2d = function( obj ) {
         process.exit(-1);
     }
         
-    var axes  = [];
-    for ( var i = 0; i < obj.length; ++i ) {
+    let axes  = [];
+    for ( let i = 0; i < obj.length; ++i ) {
         if ( obj[i] == -1 ) {
             axes.push( i );
         }
     }
 
-    var result = {};
+    let result = {};
     result.xlabel = scanobj.parameters[axes[0]].name;
     result.ylabel = scanobj.parameters[axes[1]].name;
 
@@ -168,8 +168,8 @@ exports.plot2d = function( obj ) {
     result.y = [];
     result.v = [];
 
-    for ( var i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
-        for ( var j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
+    for ( let i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
+        for ( let j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
             result.x.push( scanobj.parameters[axes[0]].val[i] );
             result.y.push( scanobj.parameters[axes[1]].val[j] );
             obj[axes[0]] = i;
@@ -203,12 +203,12 @@ exports.contours = function( obj ) {
         
     console.log( "coutours ok - so far " + JSON.stringify( obj ) );
 
-    var axes = obj;
+    const axes = obj;
     // now we need to loop through all indices not in axes
 
-    var fixed_axes       = [];
-    var fixed_axes_index = [];
-    for ( var i = 0; i < scanobj.parameters.length; ++i ) {
+    let fixed_axes       = [];
+    let fixed_axes_index = [];
+    for ( let i = 0; i < scanobj.parameters.length; ++i ) {
         if ( axes.includes(i) ) {
             continue;
         }
@@ -216,7 +216,15 @@ exports.contours = function( obj ) {
         fixed_axes_index.push( i );
     }
 
-    var cart = cartesian.apply(this, fixed_axes);
+    let cart = cartesian.apply(this, fixed_axes);
+
+    if ( cart.length == 0 ) {
+        console.error( 'contours(): zero plots!' );
+        process.exit(-1);
+    }
+
+    // debugging
+    cart = cart.slice( 0, 7 );
 
     console.log( "fixed_axes\n" + JSON.stringify( fixed_axes, null, 2 ) );
     console.log( "fixed_axes_index\n" + JSON.stringify( fixed_axes_index, null, 2 ) );
@@ -224,19 +232,69 @@ exports.contours = function( obj ) {
 
     // --> get start/end/size values for all plots
     // min/max
-    var contour_start = Math.min(...scanobj.data);
-    var contour_end   = Math.max(...scanobj.data);
-    var contour_size  = (contour_end - contour_start ) / 10;
+    const contour_start = Math.min(...scanobj.data);
+    const contour_end   = Math.max(...scanobj.data);
+    const contour_size  = (contour_end - contour_start ) / 10;
 
-    var result           = {};
+    // --> figure out layout domains
+
+    let domains   = {};
+
+    const plotsperrow = scanobj.plotsperrow      ? scanobj.plotsperrow       : 3;
+    const gapfracx    = scanobj.plotgapfractionx ? scanobj.plotgapfractionx  : 0.40;
+    const gapfracy    = scanobj.plotgapfractiony ? scanobj.plotgapfractiony  : 0.50;  
+    const plotrows    = Math.ceil( cart.length / plotsperrow );
+
+    /// compute the basic domains for a row
+
+    {
+        domains.x = [];
+        
+        const plotdomainwidth = 1 / ( ( plotsperrow - 1 ) * ( 1 + gapfracx ) + 1 );
+        const gap             = plotdomainwidth * gapfracx;
+
+        for ( let i = 0; i < plotsperrow; ++i ) {
+            domains.x.push( [i * (plotdomainwidth + gap), i * (plotdomainwidth + gap) + plotdomainwidth ] );
+        }
+
+        // console.log( `epr ${plotsperrow} plotdomainwidth ${plotdomainwidth} gap ${gap}` );
+        // console.log( JSON.stringify( domains, null, 2 ) );
+        // console.log( JSON.stringify( domains.x.map( x => x[1] - x[0] ), null, 2 ) );
+    }
+        
+    {
+        domains.y = [];
+        
+        const plotdomainheight = 1 / ( ( plotrows - 1 ) * ( 1 + gapfracy ) + 1 );
+        const gap              = plotdomainheight * gapfracy;
+
+        for ( let i = 0; i < plotrows; ++i ) {
+            for ( let j = 0; j < plotsperrow; ++j ) {
+                domains.y.push( [i * (plotdomainheight + gap), i * (plotdomainheight + gap) + plotdomainheight ] );
+            }
+        }
+        domains.y = domains.y.reverse();
+        // console.log( `epr ${plotrows} plotdomainheight ${plotdomainheight} gap ${gap}` );
+        // console.log( JSON.stringify( domains, null, 2 ) );
+        // console.log( JSON.stringify( domains.x.map( x => x[1] - x[0] ), null, 2 ) );
+    }
+
+    let result           = {};
     result.data          = [];
-    result.layout        = {};
-    result.layout.title  = scanobj.title;
+    result.layout        =
+        {
+            title        : scanobj.title
+            ,annotations : []
+        };
+
+    if ( plotrows > 1 ) {
+        result.layout.height = scanobj.plotrowheight ? scanobj.plotrowheight * plotrows : 300 * plotrows;
+    }
     
-    for ( var p = 0; p < cart.length; ++p ) {
-        var point = [];
+    for ( let p = 0; p < cart.length; ++p ) {
+        let point = [];
         if ( typeof cart[p] === 'object' ) {
-            for ( var i = 0; i < cart[p].length; ++i ) {
+            for ( let i = 0; i < cart[p].length; ++i ) {
                 point[ fixed_axes_index[ i ] ] = cart[p][i];
             }
         } else {
@@ -244,9 +302,9 @@ exports.contours = function( obj ) {
         }
         console.log( `point ${p} values ` + JSON.stringify( point ) );
 
-        var pp1 = p + 1
+        let pp1 = p + 1
 
-        var this_data = 
+        let this_data = 
             {
                 xaxis     : `x${pp1}`
                 ,yaxis    : `y${pp1}`
@@ -264,7 +322,7 @@ exports.contours = function( obj ) {
                         color : "white"
                     }
                 }
-                ,showscale  : false
+                ,showscale  : p == cart.length - 1 ? true : false
                 ,colorscale : "Jet"
             }
         ;
@@ -272,21 +330,39 @@ exports.contours = function( obj ) {
         result.layout[ `xaxis${pp1}` ] =
             {
                 title   : scanobj.parameters[axes[0]].name
-                ,anchor : `x${pp1}`
-                ,domain : [scanobj.parameters[axes[0]].val[0],scanobj.parameters[axes[0]].val[scanobj.parameters[axes[0]].val.length - 1]]
+                ,anchor : `y${pp1}`
+                ,domain : domains.x[p % plotsperrow]
             }
         ;
             
         result.layout[ `yaxis${pp1}` ] =
             {
-                title   : scanobj.parameters[axes[1]].name
-                ,anchor : `y${pp1}`
-                ,domain : [scanobj.parameters[axes[1]].val[1],scanobj.parameters[axes[1]].val[scanobj.parameters[axes[1]].val.length - 1]]
+                title       : scanobj.parameters[axes[1]].name
+                ,anchor     : `x${pp1}`
+                ,domain     : domains.y[p]
+                ,automargin : true
             }
         ;
             
-        for ( var i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
-            for ( var j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
+        if ( 0 ) {
+            // attempt at subplot titles
+            // https://github.com/plotly/plotly.js/issues/2746
+            // might need newer version of plotly
+            
+            result.layout.annotations.push(
+                {
+                    text       : `title for plot ${pp1}`
+                    ,x         : 0
+                    ,xref      : `x${pp1} domain`
+                    ,y         : 1.1
+                    ,yref      : `y${pp1} domain`
+                    ,showarrow : false
+                }
+            );
+        }
+        
+        for ( let i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
+            for ( let j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
                 point[ axes[0] ] = i;
                 point[ axes[1] ] = j;
                 console.log( `--> point ${p} values ` + JSON.stringify( point ) );
@@ -296,49 +372,32 @@ exports.contours = function( obj ) {
         }
 
         result.data.push( this_data );
-        break;
     }
+
+    // console.log( JSON.stringify( result.layout, null, 2 ) );
+    // process.exit(-1);
 
     return result;
-
-    var result = {};
-    result.xlabel = scanobj.parameters[axes[0]].name;
-    result.ylabel = scanobj.parameters[axes[1]].name;
-
-    result.x = [];
-    result.y = [];
-    result.z = [];
-
-    for ( var i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
-        for ( var j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
-            result.x.push( scanobj.parameters[axes[0]].val[i] );
-            result.y.push( scanobj.parameters[axes[1]].val[j] );
-            obj[axes[0]] = i;
-            obj[axes[1]] = j;
-            result.v.push( scanobj.data[ index( obj ) ] );
-        }
-    }
-    console.log( JSON.stringify( result, null, 2 ) );
 }    
 
 exports.fillints = function() {
     // fill data with integers
     scanobj.data = scanobj.data || [];
-    for ( var i = 0; i < scanobj.datapoints; ++i ) {
+    for ( let i = 0; i < scanobj.datapoints; ++i ) {
         scanobj.data[i] = i;
     }
 }    
 
 exports.csv = function() {
-    var res = '';
+    let res = '';
 
-    for ( var i = 0; i < scanobj.parameters.length; ++i ) {
+    for ( let i = 0; i < scanobj.parameters.length; ++i ) {
         res += scanobj.parameters[i].name + ',';
     }
     res += ( scanobj.dataname ? scanobj.dataname : 'data' ) + '\n';
 
-    for ( var i = 0; i < scanobj.datapoints; ++i ) {
-        var indices = exports.indexvalues( i );
+    for ( let i = 0; i < scanobj.datapoints; ++i ) {
+        let indices = exports.indexvalues( i );
         res += indices.map(String).join( ',' ) + ',' + scanobj.data[i] + '\n';
     }
     return res;
@@ -346,14 +405,14 @@ exports.csv = function() {
 
 // *** private ***
   
-var scanobj = {};
+let scanobj = {};
 
 const countOccurrences = (arr, val) => arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
 
 compute_offsets = function() {
     // compute multipliers for each parameter & the number of datapoints & map parameters:name to index position
     scanobj.name2index = {};
-    for ( var i = 0; i < scanobj.parameters.length; ++i ) {
+    for ( let i = 0; i < scanobj.parameters.length; ++i ) {
         scanobj.name2index[ scanobj.parameters[i].name ] = i;
     }
     scanobj.datapoints = scanobj.parameters[0].val.length;
@@ -366,7 +425,7 @@ compute_offsets = function() {
     if ( scanobj.parameters.length == 2 ) {
         return;
     }
-    for ( var i = 2; i < scanobj.parameters.length; ++i ) {
+    for ( let i = 2; i < scanobj.parameters.length; ++i ) {
         scanobj.param_offsets.push( scanobj.parameters[i-1].val.length * scanobj.param_offsets[i-1] );
         scanobj.datapoints *= scanobj.parameters[i].val.length;
     }
@@ -378,8 +437,8 @@ index = function( obj ) {
         console.error( `index(): obj.length ${obj.length} does not match scanobj.param_offsets.length ${scanobj.param_offsets.length}` );
         process.exit(-1);
     }
-    var result = obj[0];
-    for ( var i = 1; i < obj.length; i++ ) {
+    let result = obj[0];
+    for ( let i = 1; i < obj.length; i++ ) {
         // could check to make sure index is in range
         if ( obj[i] < 0 || obj[i] >= scanobj.parameters[i].val.length ) {
         console.error( `index() parameter ${i} value ${obj[i]} out of range max ${scanobj.parameters[i].val.length}` );
@@ -391,9 +450,9 @@ index = function( obj ) {
 }
 
 index2obj = function( i ) {
-    var obj = [];
-    var remainder = i;
-    for ( var j = scanobj.parameters.length - 1; j >= 0; --j ) {
+    let obj = [];
+    let remainder = i;
+    for ( let j = scanobj.parameters.length - 1; j >= 0; --j ) {
         obj.unshift( j ? Math.floor( remainder / scanobj.param_offsets[j] ) : remainder );
         remainder = remainder % scanobj.param_offsets[j];
     }
