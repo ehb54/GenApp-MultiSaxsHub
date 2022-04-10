@@ -224,7 +224,7 @@ exports.contours = function( obj ) {
     }
 
     // debugging
-    cart = cart.slice( 0, 7 );
+    cart = cart.slice( 0, 2 );
 
     console.log( "fixed_axes\n" + JSON.stringify( fixed_axes, null, 2 ) );
     console.log( "fixed_axes_index\n" + JSON.stringify( fixed_axes_index, null, 2 ) );
@@ -241,8 +241,8 @@ exports.contours = function( obj ) {
     let domains   = {};
 
     const plotsperrow = scanobj.plotsperrow      ? scanobj.plotsperrow       : 3;
-    const gapfracx    = scanobj.plotgapfractionx ? scanobj.plotgapfractionx  : 0.40;
-    const gapfracy    = scanobj.plotgapfractiony ? scanobj.plotgapfractiony  : 0.50;  
+    const gapfracx    = scanobj.plotgapfractionx ? scanobj.plotgapfractionx  : 0.20;
+    const gapfracy    = scanobj.plotgapfractiony ? scanobj.plotgapfractiony  : 0.10;  
     const plotrows    = Math.ceil( cart.length / plotsperrow );
 
     /// compute the basic domains for a row
@@ -256,7 +256,7 @@ exports.contours = function( obj ) {
         for ( let i = 0; i < plotsperrow; ++i ) {
             domains.x.push( [i * (plotdomainwidth + gap), i * (plotdomainwidth + gap) + plotdomainwidth ] );
         }
-
+        domains.x = domains.x.map( x => [ Number( x[0].toFixed(3) ), Number( x[1].toFixed(3) ) ] );
         // console.log( `epr ${plotsperrow} plotdomainwidth ${plotdomainwidth} gap ${gap}` );
         // console.log( JSON.stringify( domains, null, 2 ) );
         // console.log( JSON.stringify( domains.x.map( x => x[1] - x[0] ), null, 2 ) );
@@ -273,6 +273,7 @@ exports.contours = function( obj ) {
                 domains.y.push( [i * (plotdomainheight + gap), i * (plotdomainheight + gap) + plotdomainheight ] );
             }
         }
+        domains.y = domains.y.map( x => [ Number( x[0].toFixed(3) ), Number( x[1].toFixed(3) ) ] );
         domains.y = domains.y.reverse();
         // console.log( `epr ${plotrows} plotdomainheight ${plotdomainheight} gap ${gap}` );
         // console.log( JSON.stringify( domains, null, 2 ) );
@@ -308,6 +309,7 @@ exports.contours = function( obj ) {
             {
                 xaxis     : `x${pp1}`
                 ,yaxis    : `y${pp1}`
+                ,name     : `my legend<br>name<br>${pp1}`
                 ,type     : "contour"
                 ,x        : scanobj.parameters[axes[0]].val
                 ,y        : scanobj.parameters[axes[1]].val
@@ -329,33 +331,45 @@ exports.contours = function( obj ) {
         
         result.layout[ `xaxis${pp1}` ] =
             {
-                title   : scanobj.parameters[axes[0]].name
+                title   : {
+                    text      : scanobj.parameters[axes[0]].name
+                    ,standoff : -5
+                }
                 ,anchor : `y${pp1}`
                 ,domain : domains.x[p % plotsperrow]
+                ,visible : p >= cart.length - plotsperrow ? true : false
             }
         ;
             
         result.layout[ `yaxis${pp1}` ] =
             {
-                title       : scanobj.parameters[axes[1]].name
-                ,anchor     : `x${pp1}`
-                ,domain     : domains.y[p]
-                ,automargin : true
+                title           : p % plotsperrow == 0 ?
+                    {
+                        text      : scanobj.parameters[axes[1]].name
+                        ,standoff : -5
+                    } : false
+                ,anchor         : `x${pp1}`
+                ,domain         : domains.y[p]
+                ,automargin     : true
+                ,visible        : p % plotsperrow == 0 ? true : false
+                // doesn't work well ,ticklabelposition : "inside top"
             }
         ;
             
-        if ( 0 ) {
+        if ( 1 ) {
             // attempt at subplot titles
             // https://github.com/plotly/plotly.js/issues/2746
             // might need newer version of plotly
             
             result.layout.annotations.push(
                 {
-                    text       : `title for plot ${pp1}`
-                    ,x         : 0
-                    ,xref      : `x${pp1} domain`
-                    ,y         : 1.1
-                    ,yref      : `y${pp1} domain`
+                    text       : `plot ${pp1}<br> `
+                    ,x         : 2
+                    // ,ay        : -10
+                    ,xref      : `x${pp1}`
+                    // ,xref      : `x${pp1} domain`
+                    ,y         : 30
+                    ,yref      : `y${pp1}`
                     ,showarrow : false
                 }
             );
