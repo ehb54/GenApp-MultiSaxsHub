@@ -1,6 +1,7 @@
 // node module to handle scan data
 
-const fs = require( 'fs' );
+const fs     = require( 'fs' );
+const JSONfn = require( './jsonfn.min.js' );
 
 // *** public ***
 
@@ -8,7 +9,7 @@ exports.set = function( k, v ) {
     scanobj[k]=v;
 }
 
-exports.addparam = function( name, v ) {
+exports.addparam = function( name, v, f ) {
     // add a parameter vector value
     if ( scanobj.data && scanobj.data.length ) {
         scanobj.data = [];
@@ -16,12 +17,23 @@ exports.addparam = function( name, v ) {
     scanobj.name2index = scanobj.name2index || {};
     scanobj.parameters = scanobj.parameters || [];
 
+    if ( f && typeof f !== 'function' ) {
+        console.error( "addparam() 3rd argument, if provided, must be a function for formatting" );
+        process.exit(-1);
+    }
+
     if ( name in scanobj.name2index ) {
         console.warn( `addparam(): replacing previously assigned parameter name ${name}` );
-        scanobj.parameters[scanobj.name2index[name]].val = v;
+        scanobj.parameters[scanobj.name2index[name]].val    = v;
+        scanobj.parameters[scanobj.name2index[name]].format = f ? f : (x) => x;
     } else {        
-        scanobj.parameters.push( { name : name
-                                   ,val : v } );
+        scanobj.parameters.push(
+            {
+                name    : name
+                ,val    : v
+                ,format : f ? f : (x) => x
+            }
+        );
     }
     compute_offsets();
 }
@@ -121,7 +133,7 @@ exports.indextest = function() {
 
 exports.write = function ( filename ) {
     try {
-        fs.writeFileSync( filename, JSON.stringify( scanobj ) );
+        fs.writeFileSync( filename, JSONfn.stringify( scanobj ) );
         return true;
     } catch( err ) {
         console.error( err );
@@ -131,7 +143,7 @@ exports.write = function ( filename ) {
 
 exports.read = function ( filename ) {
     try {
-        scanobj = JSON.parse(fs.readFileSync( filename ));
+        scanobj = JSONfn.parse(fs.readFileSync( filename ));
         return true;
     } catch( err ) {
         console.error( err );
@@ -139,7 +151,7 @@ exports.read = function ( filename ) {
     }
 }
 
-exports.defaults = function( name ) {
+exports.defaults = function( name, additional ) {
     switch ( name ) {
     case "multisaxshub" :
         scanobj.plotgapfractionx = 0.20;
@@ -153,6 +165,20 @@ exports.defaults = function( name ) {
         console.log( `defaults( ${name} ) : '${name}' unknown style` );
         process.exit(-1);
         break;
+    }
+
+    if ( additional ) {
+        if ( typeof additional == 'object' ) {
+            for ( let i in additional ) {
+                if ( additional.hasOwnProperty( i ) ) {
+                    console.log( `----> adding property ${i}` );
+                    scanobj[i] = additional[i];
+                }
+            }
+        } else {
+            console.log( `defaults( ${name}, additional ) : additional data must be an object` );
+            process.exit(-1);
+        }
     }
 }
 
@@ -279,7 +305,7 @@ exports.contours = function( obj ) {
         }
         console.log( `point ${p} values ` + JSON.stringify( point ) );
 
-        let pp1 = p + 1
+        const pp1 = p + 1
 
         let this_data = 
             {
@@ -342,10 +368,10 @@ exports.contours = function( obj ) {
             
         result.layout.annotations.push(
             {
-                text       : `plot ${pp1}<br> `
+                text       : fixed_axes_index.reduce( (a, i) => a + scanobj.parameters[ i ].name + "=" + scanobj.parameters[ i ].format( scanobj.parameters[ i ].val[ point[ i ] ] ) + "<br>", "" )
                 ,x         : 0
                 ,xref      : `x${pp1} domain`
-                ,y         : 1.1
+                ,y         : 1 + .1 * fixed_axes_index.length
                 ,yref      : `y${pp1} domain`
                 ,showarrow : false
             }
