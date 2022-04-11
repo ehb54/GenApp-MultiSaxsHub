@@ -139,46 +139,22 @@ exports.read = function ( filename ) {
     }
 }
 
-exports.plot2d = function( obj ) {
-    // return 2d plot data for selected indices
-    // modify - obj [ -1, pos, pos, -1, pos ] etc where -1's are the selected indices
-    
-    if ( obj.length != scanobj.parameters.length ) {
-        console.error( `plot2d() : argument array length ${obj.length} does not match scanobj.parameters.length ${scanobj.parameters.length}` );
+exports.defaults = function( name ) {
+    switch ( name ) {
+    case "multisaxshub" :
+        scanobj.plotgapfractionx = 0.20;
+        scanobj.plotgapfractiony = 0.16;
+        scanobj.plotsperrow      = 3;
+        scanobj.plotrowheight    = 300;
+        scanobj.dataname         = 'Chi^2';
+        scanobj.datanamehtml     = '<i style="font-family:georgia">&#935;</i><sup>2</sup>';
+        break;
+    default:
+        console.log( `defaults( ${name} ) : '${name}' unknown style` );
         process.exit(-1);
+        break;
     }
-
-    if ( countOccurrences(obj, -1) != 2 ) {
-        console.error( `plot2d() : argument array must contain exactly 2 -1 values as positional markers of the plotted indices` );
-        process.exit(-1);
-    }
-        
-    let axes  = [];
-    for ( let i = 0; i < obj.length; ++i ) {
-        if ( obj[i] == -1 ) {
-            axes.push( i );
-        }
-    }
-
-    let result = {};
-    result.xlabel = scanobj.parameters[axes[0]].name;
-    result.ylabel = scanobj.parameters[axes[1]].name;
-
-    result.x = [];
-    result.y = [];
-    result.v = [];
-
-    for ( let i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
-        for ( let j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
-            result.x.push( scanobj.parameters[axes[0]].val[i] );
-            result.y.push( scanobj.parameters[axes[1]].val[j] );
-            obj[axes[0]] = i;
-            obj[axes[1]] = j;
-            result.v.push( scanobj.data[ index( obj ) ] );
-        }
-    }
-    console.log( JSON.stringify( result, null, 2 ) );
-}    
+}
 
 exports.contours = function( obj ) {
     // return contour plot data
@@ -224,7 +200,7 @@ exports.contours = function( obj ) {
     }
 
     // debugging
-    cart = cart.slice( 0, 2 );
+    // cart = cart.slice( 0, 2 );
 
     console.log( "fixed_axes\n" + JSON.stringify( fixed_axes, null, 2 ) );
     console.log( "fixed_axes_index\n" + JSON.stringify( fixed_axes_index, null, 2 ) );
@@ -240,7 +216,7 @@ exports.contours = function( obj ) {
 
     let domains   = {};
 
-    const plotsperrow = scanobj.plotsperrow      ? scanobj.plotsperrow       : 3;
+    const plotsperrow = Math.min( scanobj.plotsperrow ? scanobj.plotsperrow  : 3, cart.length );
     const gapfracx    = scanobj.plotgapfractionx ? scanobj.plotgapfractionx  : 0.20;
     const gapfracy    = scanobj.plotgapfractiony ? scanobj.plotgapfractiony  : 0.10;  
     const plotrows    = Math.ceil( cart.length / plotsperrow );
@@ -289,7 +265,7 @@ exports.contours = function( obj ) {
         };
 
     if ( plotrows > 1 ) {
-        result.layout.height = scanobj.plotrowheight ? scanobj.plotrowheight * plotrows : 300 * plotrows;
+        result.layout.height = plotrows * ( scanobj.plotrowheight ? scanobj.plotrowheight : 300 );
     }
     
     for ( let p = 0; p < cart.length; ++p ) {
@@ -324,8 +300,12 @@ exports.contours = function( obj ) {
                         color : "white"
                     }
                 }
-                ,showscale  : p == cart.length - 1 ? true : false
                 ,colorscale : "Jet"
+                ,showscale  : p == cart.length - 1 ? true : false
+                ,colorbar   : {
+                    title      : (scanobj.datanamehtml || scanobj.dataname ) && p == cart.length - 1 ? (scanobj.datanamehtml || scanobj.dataname ) : ''
+                    ,titleside : "top"
+                }
             }
         ;
         
@@ -356,24 +336,20 @@ exports.contours = function( obj ) {
             }
         ;
             
-        if ( 1 ) {
-            // attempt at subplot titles
-            // https://github.com/plotly/plotly.js/issues/2746
-            // might need newer version of plotly
+        // subplot titles
+        // https://github.com/plotly/plotly.js/issues/2746
+        // needs recent version of plotly (2.11.1 known to work)
             
-            result.layout.annotations.push(
-                {
-                    text       : `plot ${pp1}<br> `
-                    ,x         : 2
-                    // ,ay        : -10
-                    ,xref      : `x${pp1}`
-                    // ,xref      : `x${pp1} domain`
-                    ,y         : 30
-                    ,yref      : `y${pp1}`
-                    ,showarrow : false
-                }
-            );
-        }
+        result.layout.annotations.push(
+            {
+                text       : `plot ${pp1}<br> `
+                ,x         : 0
+                ,xref      : `x${pp1} domain`
+                ,y         : 1.1
+                ,yref      : `y${pp1} domain`
+                ,showarrow : false
+            }
+        );
         
         for ( let i = 0; i < scanobj.parameters[axes[0]].val.length; ++i ) {
             for ( let j = 0; j < scanobj.parameters[axes[1]].val.length; ++j ) {
