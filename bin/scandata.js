@@ -1,3 +1,48 @@
+// ----------------------------------------------------------------------------------------------------------
+// scandata.js
+// ----------------------------------------------------------------------------------------------------------
+// background
+// ----------------------------------------------------------------------------------------------------------
+// manages n-d data for plotly plotting
+// ----------------------------------------------------------------------------------------------------------
+// summary of data structures
+// ----------------------------------------------------------------------------------------------------------
+// scanobj - private - all data
+// ----------------------------------------------------------------------------------------------------------
+// summary of public methods
+// ----------------------------------------------------------------------------------------------------------
+// addparam( name, vals [, format ])  - initializes a parameter - inputs: name (String), vals (Array of Numbers), format (Function, optional)
+// set( key, val )                    - set a toplevel value of scanobj - inputs: key (String), val (whatever)
+// list()                             - JSON.stringify's the scanobj to console.out
+// for the below functions: obj can be either a number (pos in data) an Array (indices to params)
+// setdata( obj, val )                - sets the plot data for the given obj
+// data( obj )                        - return the data value for the given obj
+// indexvalues( obj )                 - return an array of the parameters values for the obj
+// indices( obj )                     - return an array of indices for the obj
+// indextest()                        - various testing sanity checks
+// write( filename )                  - writes the scanobj to the file (includes functions)
+// read( filename )                   - read the scanobj from the file (includes functions)
+// defaults( name, additional )       - sets various defaults and optional overrides in the additional object
+// contours( axes )                   - axes array of 2 indices for the two indices for the plot.
+//                                    - Generates plotly contour subplots for every parameter value not specified in the axes, returns as one plot object
+// fillints()                         - fills data with integers for testing
+// csv()                              - returns a csv-formatted strin) of data
+
+
+// example usage:
+// ----------------------------------------------------------------------------------------------------------
+// scenario 1 - generate contour plots for a 3d set of data using 3 
+// ----------------------------------------------------------------------------------------------------------
+// scandata.addparam( "d_rho", "d_rho", [ .1, .2, .3 ], (x) => x.toFixed(2) ); // becomes parameter 0
+// scandata.addparam( "eV", "eV", [ 1, 2, 3 ], (x) => x.toFixed(0) );       // becomes parameter 1
+// scandata.addparam( "Vol", "Vol", [ 10, 20, 30, 40 ] );                    // becomes parameter 2
+// scandata.defaults( "multisaxshub", { title : "CRYSOL Chi^2 Scan Data" } );
+// loop of scandata.setdata( obj, val ):
+// plotlyobj = scandata.contour( [1, 2] ); // plots eV vs Vol for each d_rho
+// ----------------------------------------------------------------------------------------------------------
+
+
+
 // node module to handle scan data
 
 const fs     = require( 'fs' );
@@ -9,7 +54,7 @@ exports.set = function( k, v ) {
     scanobj[k]=v;
 }
 
-exports.addparam = function( name, v, f ) {
+exports.addparam = function( obj ) {
     // add a parameter vector value
     if ( scanobj.data && scanobj.data.length ) {
         scanobj.data = [];
@@ -17,21 +62,38 @@ exports.addparam = function( name, v, f ) {
     scanobj.name2index = scanobj.name2index || {};
     scanobj.parameters = scanobj.parameters || [];
 
-    if ( f && typeof f !== 'function' ) {
-        console.error( "addparam() 3rd argument, if provided, must be a function for formatting" );
+    if ( typeof obj !== 'object' ) {
+        console.error( "addparam() object parameter required" );
         process.exit(-1);
     }
 
-    if ( name in scanobj.name2index ) {
-        console.warn( `addparam(): replacing previously assigned parameter name ${name}` );
-        scanobj.parameters[scanobj.name2index[name]].val    = v;
-        scanobj.parameters[scanobj.name2index[name]].format = f ? f : (x) => x;
+    if ( !obj.name ) {
+        console.error( "addparam() obj.name must be defined" );
+        process.exit(-1);
+    }
+
+    if ( !obj.val || !Array.isArray( obj.val ) ) {
+        console.error( "addparam() obj.val must be defined and be an array" );
+        process.exit(-1);
+    }
+
+    if ( obj.format && typeof obj.format !== 'function' ) {
+        console.error( "addparam() obj.format provided but not a function " );
+        process.exit(-1);
+    }
+
+    if ( obj.name in scanobj.name2index ) {
+        console.warn( `addparam(): replacing previously assigned parameter name ${obj.name}` );
+        scanobj.parameters[scanobj.name2index[name]].namehtml = obj.namehtml ? obj.namehtml : obj.name
+        scanobj.parameters[scanobj.name2index[name]].val      = obj.val;
+        scanobj.parameters[scanobj.name2index[name]].format   = obj.format ? obj.format : (x) => x;
     } else {        
         scanobj.parameters.push(
             {
-                name    : name
-                ,val    : v
-                ,format : f ? f : (x) => x
+                name      : obj.name
+                ,namehtml : obj.namehtml ? obj.namehtml : obj.name
+                ,val      : obj.val
+                ,format   : obj.format ? obj.format : (x) => x
             }
         );
     }
@@ -39,7 +101,7 @@ exports.addparam = function( name, v, f ) {
 }
 
 exports.list = function() {
-    console.log( JSON.stringify( scanobj, null, 2 ) );
+    console.log( JSON.stringify( JSON.parse( JSONfn.stringify( scanobj ) ), null, 2 ) );
 }
 
 exports.setdata = function( obj, val ) {
@@ -286,7 +348,7 @@ exports.contours = function( obj ) {
     result.data          = [];
     result.layout        =
         {
-            title        : scanobj.title
+            title        : scanobj.titlehtml ? scanobj.titlehtml : scanobj.title
             ,annotations : []
         };
 
@@ -303,19 +365,19 @@ exports.contours = function( obj ) {
         } else {
             point[ fixed_axes_index[ 0 ] ] = cart[p];
         }
-        console.log( `point ${p} values ` + JSON.stringify( point ) );
+        // console.log( `point ${p} values ` + JSON.stringify( point ) );
 
         const pp1 = p + 1
 
         let this_data = 
             {
-                xaxis     : `x${pp1}`
-                ,yaxis    : `y${pp1}`
-                ,name     : `my legend<br>name<br>${pp1}`
-                ,type     : "contour"
-                ,x        : scanobj.parameters[axes[0]].val
-                ,y        : scanobj.parameters[axes[1]].val
-                ,z        : []
+                xaxis          : `x${pp1}`
+                ,yaxis         : `y${pp1}`
+                ,name          : fixed_axes_index.reduce( (a, i) => a + scanobj.parameters[ i ].namehtml + "=" + scanobj.parameters[ i ].format( scanobj.parameters[ i ].val[ point[ i ] ] ) + "<br>", "" )
+                ,type          : "contour"
+                ,x             : scanobj.parameters[axes[0]].val
+                ,y             : scanobj.parameters[axes[1]].val
+                ,z             : []
                 ,contours : {
                     coloring    : "heatmap"
                     ,showlabels : true
@@ -326,19 +388,23 @@ exports.contours = function( obj ) {
                         color : "white"
                     }
                 }
-                ,colorscale : "Jet"
-                ,showscale  : p == cart.length - 1 ? true : false
-                ,colorbar   : {
-                    title      : (scanobj.datanamehtml || scanobj.dataname ) && p == cart.length - 1 ? (scanobj.datanamehtml || scanobj.dataname ) : ''
-                    ,titleside : "top"
+                ,colorscale    : "Jet"
+                ,showscale     : p == cart.length - 1 ? true : false
+                ,colorbar      : {
+                    title       : (scanobj.datanamehtml || scanobj.dataname ) && p == cart.length - 1 ? (scanobj.datanamehtml || scanobj.dataname ) : ''
+                    ,titleside  : "top"
                 }
+                ,hovertemplate :
+                    scanobj.parameters[axes[0]].namehtml + ' = %{x}<br>'
+                    + scanobj.parameters[axes[1]].namehtml + ' = %{y}<br>'
+                    + ( scanobj.datanamehtml || scanobj.dataname ? scanobj.datanamehtml || scanobj.dataname : 'z' ) + ' = %{z}'
             }
         ;
         
         result.layout[ `xaxis${pp1}` ] =
             {
                 title   : {
-                    text      : scanobj.parameters[axes[0]].name
+                    text      : scanobj.parameters[axes[0]].namehtml
                     ,standoff : -5
                 }
                 ,anchor : `y${pp1}`
@@ -351,7 +417,7 @@ exports.contours = function( obj ) {
             {
                 title           : p % plotsperrow == 0 ?
                     {
-                        text      : scanobj.parameters[axes[1]].name
+                        text      : scanobj.parameters[axes[1]].namehtml
                         ,standoff : -5
                     } : false
                 ,anchor         : `x${pp1}`
@@ -368,7 +434,7 @@ exports.contours = function( obj ) {
             
         result.layout.annotations.push(
             {
-                text       : fixed_axes_index.reduce( (a, i) => a + scanobj.parameters[ i ].name + "=" + scanobj.parameters[ i ].format( scanobj.parameters[ i ].val[ point[ i ] ] ) + "<br>", "" )
+                text       : fixed_axes_index.reduce( (a, i) => a + scanobj.parameters[ i ].namehtml + "=" + scanobj.parameters[ i ].format( scanobj.parameters[ i ].val[ point[ i ] ] ) + "<br>", "" )
                 ,x         : 0
                 ,xref      : `x${pp1} domain`
                 ,y         : 1 + .1 * fixed_axes_index.length
