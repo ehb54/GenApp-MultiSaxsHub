@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------------------------------------
 // summary of public methods
 // ----------------------------------------------------------------------------------------------------------
-// addparam( name, vals [, format ])  - initializes a parameter - inputs: name (String), vals (Array of Numbers), format (Function, optional)
+// addparam( obj )                    - initializes a parameter - obj e.g. { name: name, namehtml: namehtml, val: [ values ], format: formatfunction }
 // set( key, val )                    - set a toplevel value of scanobj - inputs: key (String), val (whatever)
 // list()                             - JSON.stringify's the scanobj to console.out
 // for the below functions: obj can be either a number (pos in data) an Array (indices to params)
@@ -52,6 +52,13 @@ const JSONfn = require( './jsonfn.min.js' );
 
 exports.set = function( k, v ) {
     scanobj[k]=v;
+}
+
+exports.namehtml = function( name ) {
+    if ( name in namehtmlmaps ) {
+        return namehtmlmaps[name];
+    }
+    return name;
 }
 
 exports.addparam = function( obj ) {
@@ -242,6 +249,15 @@ exports.defaults = function( name, additional ) {
             process.exit(-1);
         }
     }
+}
+
+exports.valuereport = function () {
+    // return report of indexvalues to data
+    let result = '';
+    for ( let i = 0; i < scanobj.datapoints; ++i ) {
+        result += JSON.stringify( exports.indexvalues( i ) ) + ' ' + exports.data( i ) + "\n";
+    }
+    return result;
 }
 
 exports.contours = function( obj ) {
@@ -485,6 +501,16 @@ exports.csv = function() {
     return res;
 }
 
+exports.csvwrite = function( filename ) {
+    try {
+        fs.writeFileSync( filename, exports.csv() );
+        return true;
+    } catch( err ) {
+        console.error( err );
+        return false;
+    }
+}
+
 // *** private ***
   
 let scanobj = {};
@@ -543,3 +569,11 @@ index2obj = function( i ) {
 
 // thanks https://stackoverflow.com/users/613198/rsp https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
 const cartesian = (...a) => a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
+
+const namehtmlmaps = {
+    contrast_hydration : "&#916;&#961; [e/&#8491;<sup>3</sup>]"
+    ,atomic_radius     : "Ra [&#8491;]"
+    ,excluded_volume   : "Vol [&#8491;<sup>3</sup>]"
+}
+
+

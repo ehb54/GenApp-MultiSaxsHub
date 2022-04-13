@@ -36,7 +36,9 @@
 // set_scan_variables_scanner()  - sets variables from index array, appears the one is (set -1) is allowed to float
 
 
-const debug = false;
+const debug         = false;
+var   scandata_mode = false;
+
 dmsg = function( msg ) {
     if ( !debug ) {
         return false;
@@ -413,9 +415,13 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                 response = temp_response[ opt ][ "response" ].toString();
             };
             if ( opt == "plot_fit" ) {
+                let this_step = temp_response[ "set_parameters" ][ "min" ];
                 var chi2 = res.toString().replace(/\n/g," ").split(" ");
                 chi2_scan.push( chi2[ chi2.indexOf('Chi\^2:') + 1] );
-                dmsg( `get_respons_scan_runner() : currentstep ${currentstep} chi2_scan ` + JSON.stringify( chi2_scan ) );
+                dmsg( `get_respons_scan_runner() : this_step ${this_step} chi2 ${chi2} chi2_scan ` + JSON.stringify( chi2_scan ) );
+                dmsg( `setdata info this_step ${this_step} chi2 value ` + ( +(chi2_scan[ chi2_scan.length - 1 ]) ) );
+                
+                this_step ? scandata.setdata( this_step - 1, +(chi2_scan[ chi2_scan.length - 1 ]) ) : '';
                 if ( temp_response[ "set_parameters" ][ "min" ] == 0 ) {
                     if ( "constant_subtractions" in req ) { 
                         app_texts_scan[ "constant_subtractions" ][ "response" ] = "Y";
@@ -777,6 +783,12 @@ async function scan_runner() {
     write_chi2(nscans, chi2_from_log);
     //    console.log( chi2_scan );
     console.log( "# of step = " + maxscansteps + " Done \n" );
+    
+    if ( scandata_mode ) {
+        scandata.write   ( req._base_directory + "/" + pdbshort.split( '.' ).slice( 0,1 ) + "00.scandata" );
+        scandata.csvwrite( req._base_directory + "/" + pdbshort.split( '.' ).slice( 0,1 ) + "00.scan.csv" );
+    }
+
     return result;
 }
 
@@ -1423,14 +1435,33 @@ function generate_scan_array( ntotal, nscan ){
 
     // alternate scan data setup
 
+    scandata.defaults( "multisaxshub",
+                       {
+                           title : "CRYSOL chi^2 scan data"
+                           ,titlehtml : 'CRYSOL <i style="font-family:georgia">&#935;</i><sup>2</sup> scan data'
+                       } );
+
     for ( var i = 0; i < nscan; ++i ) {
-        var tmpa = [];
-        for ( var j = 0; j < app_texts_scan[ scan_variables_points[ 0 ] ][ "response" ]; ++j ) {
-            tmpa.push( +app_texts_scan[ scan_variables_low[ i ] ][ "response" ]
+        var vals = [];
+        for ( var j = 0; j < app_texts_scan[ scan_variables_points[ i ] ][ "response" ]; ++j ) {
+            vals.push( +app_texts_scan[ scan_variables_low[ i ] ][ "response" ]
                        + +app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] * j );
         }
         
-        scandata.addparam( scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' ), tmpa );
+        scandata.addparam(
+            {
+                name     : scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' )
+                ,namehtml : scandata.namehtml( scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' ) )
+                ,val      : vals
+                ,format   : (x) => Math.round( x * 100 ) / 100
+            }
+        );
+    }
+
+    if ( nscan == 3 ) {
+        // redo newarray
+        scandata_mode = true;
+        newarray      = scandata.indices();
     }
 
     dmsg( "scandata.list():" );

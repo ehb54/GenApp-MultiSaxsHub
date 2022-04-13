@@ -16,6 +16,7 @@ promisify = util.promisify;
 const p_exec = promisify( require( 'child_process' ).exec ) ;
 const exec = require( 'child_process' ).exec;
 const yaml = require( 'node-yaml' );
+const scandata = require( "./scandata.js" );
 
 const { PerformanceObserver, performance } = require('perf_hooks');
 
@@ -1033,7 +1034,6 @@ var table = {
         ,"scan" :
         {
             "nscans" : 0
-
         }
     }
 
@@ -1213,7 +1213,6 @@ var table = {
         ,"scan" :
         {       
             "nscans" : 0
-
         }
     }
     ,"SASTBX" :
@@ -1332,7 +1331,6 @@ var table = {
         ,"scan" :
         {       
             "nscans" : 0
-
         }
     }
     
@@ -1490,7 +1488,6 @@ var table = {
         ,"scan" :
         {   
             "nscans" : 0
-
         }
     }
     
@@ -1524,7 +1521,6 @@ var table = {
         ,"scan" :
         {   
             "nscans" : 0
-
         }
     }
     
@@ -1558,7 +1554,6 @@ var table = {
         ,"scan" :
         {   
             "nscans" : 0
-
         }
     }
 
@@ -2728,10 +2723,10 @@ async function check_scan() {
     var grep_scan_var = "grep " + "\"## \" " + filename; // + " | tail -12 "; 
 
     await getFile( filename, 100);
-    send_udpmsg( { _textarea : "\n" + "=".repeat(28) + " Scan Setup " + "=".repeat(28) + "\n\n" } );
+    send_udpmsg( { _textarea : "\n" + "=".repeat(28) + " Scan Setup " + "=".repeat(29) + "\n\n" } );
     await get_adjusted_scan_parameter( grep_scan_var, 100 ); 
 
-    send_udpmsg( { _textarea : "=".repeat(28) + " Run status " + "=".repeat(28) + "\n" } );
+    send_udpmsg( { _textarea : "=".repeat(28) + " Run status " + "=".repeat(29) + "\n" } );
     await get_expectation_scantime( grep_cmd, 100 ); 
 
     var index_time = parseFloat( check_scan_step[ "stdout" ].split( ' ' ).slice(-2, -1)[0]);
@@ -2858,7 +2853,7 @@ function input_filter ( ) {
         if ( req.number_of_points < 50 ) {
             send_udpmsg( { _textarea : "## Number of q points = " + req.number_of_points + " is too small.\n     It may significanly affect fitting & scanning results depending on programs selected.\n" } );
         };
-        send_udpmsg( { _textarea : "=".repeat(66) + "\n"} );
+        send_udpmsg( { _textarea : "=".repeat(69) + "\n"} );
     } else {
         qmin_calc = req.qmin;
         qmax_calc = req.qmax
@@ -2958,8 +2953,22 @@ async function taskRunner(fn, label) {
 	        delete res._textarea;
             }
 
-            send_udpmsg( { _textarea : "Finished Multi SAXS job!\n" + "=".repeat(66) } );
+            send_udpmsg( { _textarea : "Finished Multi SAXS job!\n" + "=".repeat(69) } );
             //        await sleep(1000);
+// *******  // --> if crysol3d set && scandata found, replace with scandata.contours()
+            // send_udpmsg( { _textarea : '\nres.chi2_2D_CRYSOL ' + ( res.chi2_2D_CRYSOL && res.chi2_2D_CRYSOL.layout.xaxis2  ? 'defined' : 'not defined' ) + '\n' } );
+            if ( res.chi2_2D_CRYSOL && res.chi2_2D_CRYSOL.layout.xaxis2 ) {
+                delete res.chi2_2D_CRYSOL;
+                // replace with scandata.contours()
+                let fname = req._base_directory + "/" + pdbshort.split( '.' ).slice( 0,1 ) + "00.scandata";
+                if ( !scandata.read( fname ) ) {
+                    send_udpmsg( { _textarea : `\nError: trying to read ${fname} for plot data` } );
+                } else {
+                    send_udpmsg( { _textarea : `\nOK: trying to read ${fname} for plot data` } );
+                    res.chi2_2D_CRYSOL = scandata.contours( [ 'contrast_hydration', 'excluded_volume' ] );
+                }
+            }
+
             console.log(JSON.stringify(res));
             ;}
     } 
