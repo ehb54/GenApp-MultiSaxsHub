@@ -385,14 +385,28 @@ function scan_parameter_report( res  ) {
 
 }
 
+var last_chi2;
+var last_chi2_avail = false;
+
 async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
     var response = '';
     var resstring = res.replace(/\s+/g,'').replace(/\h+/g,'').replace(/\-+/g,'');
 
     0 && dmsg( "get_response_scan_runner()" );
-    0 && dmsg( "get_response_scan_runner() : res now       : " + res );
+    dmsg( "get_response_scan_runner() : res now       : " + res );
     0 && dmsg( "get_response_scan_runner() : resstring now : " + resstring );
     
+    if ( /Chi\^2:/.test(res) ) {
+        if ( last_chi2_avail ) {
+            console.error( "--> chi^2 found but last value is still available" );
+        } else {
+            last_chi2       = res.replace( /^.*Chi\^2:\s*/, '' ).replace( /\n.*/, '' );
+            debug && console.log( `--> last_chi2 '${last_chi2}'` );
+            last_chi2       = last_chi2 === '******' ? '99.999' : last_chi2;
+            last_chi2_avail = true;
+        }
+    }
+
     for ( opt in app_texts_scan) {
         0 && dmsg( "get_response_scan_runner() : opt now       : " + JSON.stringify( opt ) );
         var optstring = temp_response[ opt ][ "text" ].replace(/\s+/g,'').replace(/\h+/g,'');
@@ -416,9 +430,16 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
             };
             if ( opt == "plot_fit" ) {
                 let this_step = temp_response[ "set_parameters" ][ "min" ];
-                var chi2 = res.toString().replace(/\n/g," ").split(" ");
-                chi2_scan.push( chi2[ chi2.indexOf('Chi\^2:') + 1] );
-                dmsg( `get_respons_scan_runner() : this_step ${this_step} chi2 ${chi2} chi2_scan ` + JSON.stringify( chi2_scan ) );
+                if ( !last_chi2_avail ) {
+                    console.error( "--> chi^2 not available" );
+                }
+                const chi2      = last_chi2;
+                last_chi2_avail = false;
+                // res.replace( /^.*Chi\^2:\s*/, '' ).replace( /\n.*/, '' );
+                dmsg( `--> res '${res}'` );
+                dmsg( `--> chi2 '${chi2}'` );
+                chi2_scan.push( chi2 );
+                dmsg( `get_response_scan_runner() : this_step ${this_step} chi2 ${chi2}\n-->chi2_scan ` + JSON.stringify( chi2_scan ) );
                 dmsg( `setdata info this_step ${this_step} chi2 value ` + ( +(chi2_scan[ chi2_scan.length - 1 ]) ) );
                 
                 this_step ? scandata.setdata( this_step - 1, +(chi2_scan[ chi2_scan.length - 1 ]) ) : '';
@@ -428,7 +449,11 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                         temp_response[ "constant_subtractions" ][ "response" ] = "Y"; 
                     };
                     startTime = performance.now();
-                    scan_parameter_report( res ); 
+                    scan_parameter_report( res );
+                    console.info( scan_variables );
+                    if ( scandata_mode ) {
+                        reset_scandata( scan_variables.length );
+                    }
                 } else {
                     var exeTime = (Number.parseInt(performance.now() - startTime))/1000;
                     console.log ( "Time per step = " + exeTime + " secs" );
@@ -1393,6 +1418,31 @@ function setup_scan() {
     });
 }
 
+function reset_scandata( nscan ) {
+    scandata.defaults( "multisaxshub",
+                       {
+                           title : "CRYSOL chi^2 scan data"
+                           ,titlehtml : 'CRYSOL <i style="font-family:georgia">&#935;</i><sup>2</sup> scan data'
+                       } );
+
+    for ( var i = 0; i < nscan; ++i ) {
+        var vals = [];
+        for ( var j = 0; j < app_texts_scan[ scan_variables_points[ i ] ][ "response" ]; ++j ) {
+            vals.push( +app_texts_scan[ scan_variables_low[ i ] ][ "response" ]
+                       + +app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] * j );
+        }
+        
+        scandata.addparam(
+            {
+                name     : scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' )
+                ,namehtml : scandata.namehtml( scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' ) )
+                ,val      : vals
+                ,format   : (x) => Math.round( x * 1000 ) / 1000
+            }
+        );
+    }
+}    
+
 /**
  * creates an array of indices to scan parameters
  * @param {Number} total number of parameters (possible?) to scan
@@ -1434,29 +1484,7 @@ function generate_scan_array( ntotal, nscan ){
     };
 
     // alternate scan data setup
-
-    scandata.defaults( "multisaxshub",
-                       {
-                           title : "CRYSOL chi^2 scan data"
-                           ,titlehtml : 'CRYSOL <i style="font-family:georgia">&#935;</i><sup>2</sup> scan data'
-                       } );
-
-    for ( var i = 0; i < nscan; ++i ) {
-        var vals = [];
-        for ( var j = 0; j < app_texts_scan[ scan_variables_points[ i ] ][ "response" ]; ++j ) {
-            vals.push( +app_texts_scan[ scan_variables_low[ i ] ][ "response" ]
-                       + +app_texts_scan[ scan_variables_interval[ i ] ][ "response" ] * j );
-        }
-        
-        scandata.addparam(
-            {
-                name     : scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' )
-                ,namehtml : scandata.namehtml( scan_variables_points[ i ].replace( /(^scan_|_points$)/g, '' ) )
-                ,val      : vals
-                ,format   : (x) => Math.round( x * 100 ) / 100
-            }
-        );
-    }
+    reset_scandata( nscan );
 
     if ( nscan == 3 ) {
         // redo newarray
