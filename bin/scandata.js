@@ -63,6 +63,8 @@ exports.namehtml = function( name ) {
 
 exports.addparam = function( obj ) {
     // add a parameter vector value
+    // console.log( "addparam( obj ) : obj:\n" );
+    // console.info( obj );
     if ( scanobj.data && scanobj.data.length ) {
         scanobj.data = [];
     }
@@ -91,9 +93,9 @@ exports.addparam = function( obj ) {
 
     if ( obj.name in scanobj.name2index ) {
         console.warn( `addparam(): replacing previously assigned parameter name ${obj.name}` );
-        scanobj.parameters[scanobj.name2index[name]].namehtml = obj.namehtml ? obj.namehtml : obj.name
-        scanobj.parameters[scanobj.name2index[name]].val      = obj.val;
-        scanobj.parameters[scanobj.name2index[name]].format   = obj.format ? obj.format : (x) => x;
+        scanobj.parameters[scanobj.name2index[obj.name]].namehtml = obj.namehtml ? obj.namehtml : obj.name
+        scanobj.parameters[scanobj.name2index[obj.name]].val      = obj.val;
+        scanobj.parameters[scanobj.name2index[obj.name]].format   = obj.format ? obj.format : (x) => x;
     } else {        
         scanobj.parameters.push(
             {
@@ -281,7 +283,7 @@ exports.contours = function( obj ) {
         process.exit(-1);
     }
         
-    console.log( "coutours ok - so far " + JSON.stringify( obj ) );
+    console.log( "contours ok - so far " + JSON.stringify( obj ) );
 
     const axes = obj;
     // now we need to loop through all indices not in axes
@@ -314,7 +316,7 @@ exports.contours = function( obj ) {
     // min/max
     const contour_start = Math.min(...scanobj.data);
     const contour_end   = Math.max(...scanobj.data);
-    const contour_size  = (contour_end - contour_start ) / 10;
+    const contour_size  = ( contour_end - contour_start ) / 20;
 
     // --> figure out layout domains
 
