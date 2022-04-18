@@ -2964,7 +2964,7 @@ async function taskRunner(fn, label) {
                 if ( !scandata.read( fname ) ) {
                     send_udpmsg( { _textarea : `\nError: trying to read ${fname} for plot data` } );
                 } else {
-                    send_udpmsg( { _textarea : `\nOK: trying to read ${fname} for plot data` } );
+                    // send_udpmsg( { _textarea : `\nOK: trying to read ${fname} for plot data` } );
                     res.chi2_2D_CRYSOL = scandata.contours( [ 'contrast_hydration', 'excluded_volume' ] );
                 }
             }
