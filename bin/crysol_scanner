@@ -255,6 +255,7 @@ function get_response_fit_runner(response_update, source, res, maxscansteps ) {
 function scan_parameter_report( res  ) {
 
     //    console.log ("## Scan parameters = " + JSON.stringify( scan_variables) ); 
+    dmsg( `--> scan_parameter_report() res is \n-->'${res}'` );
 
     if ( req[ "excluded_volume_mode" ] == "5" ){
         var scale_ev_volume = parseFloat( res.substring(res.indexOf("V" ) + 4, res.indexOf("V" ) + 10 ) );
@@ -386,6 +387,7 @@ function scan_parameter_report( res  ) {
 }
 
 var last_chi2;
+var last_chi2_res_line;
 var last_chi2_avail = false;
 
 async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
@@ -400,10 +402,12 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
         if ( last_chi2_avail ) {
             console.error( "--> chi^2 found but last value is still available" );
         } else {
-            last_chi2       = res.replace( /^.*Chi\^2:\s*/, '' ).replace( /\n.*/, '' );
-            debug && console.log( `--> last_chi2 '${last_chi2}'` );
-            last_chi2       = last_chi2 === '******' ? '99.999' : last_chi2;
-            last_chi2_avail = true;
+            last_chi2          = res.replace( /^.*Chi\^2:\s*/, '' ).replace( /\n.*/, '' );
+            dmsg( `--> last_chi2 '${last_chi2}'` );
+            last_chi2          = last_chi2 === '******' ? '99.999' : last_chi2;
+            last_chi2_avail    = true;
+            last_chi2_res_line = res;
+            dmsg( `--> last_chi2_res_line '${last_chi2_res_line}'` );
         }
     }
 
@@ -433,8 +437,7 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                 if ( !last_chi2_avail ) {
                     console.error( "--> chi^2 not available" );
                 }
-                const chi2      = last_chi2;
-                last_chi2_avail = false;
+                const chi2         = last_chi2;
                 // res.replace( /^.*Chi\^2:\s*/, '' ).replace( /\n.*/, '' );
                 dmsg( `--> res '${res}'` );
                 dmsg( `--> chi2 '${chi2}'` );
@@ -443,13 +446,14 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                 dmsg( `setdata info this_step ${this_step} chi2 value ` + ( +(chi2_scan[ chi2_scan.length - 1 ]) ) );
                 
                 this_step ? scandata.setdata( this_step - 1, +(chi2_scan[ chi2_scan.length - 1 ]) ) : '';
+                
                 if ( temp_response[ "set_parameters" ][ "min" ] == 0 ) {
                     if ( "constant_subtractions" in req ) { 
                         app_texts_scan[ "constant_subtractions" ][ "response" ] = "Y";
                         temp_response[ "constant_subtractions" ][ "response" ] = "Y"; 
                     };
                     startTime = performance.now();
-                    scan_parameter_report( res );
+                    scan_parameter_report( last_chi2_avail ? last_chi2_res_line + res : res );
                     console.info( scan_variables );
                     if ( scandata_mode ) {
                         reset_scandata( scan_variables.length );
@@ -460,6 +464,8 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                     console.log ( "Remaining steps = " + ( maxscansteps - temp_response[ "set_parameters" ][ "min" ] ) + " : Expected to finish in " + ( exeTime * ( maxscansteps - temp_response[ "set_parameters" ][ "min" ] ) ).toFixed(2)+ " secs" ); 
                     startTime = performance.now();
                 };
+                last_chi2_avail    = false;
+                last_chi2_res_line = '';
             };
             //            console.log ("UPDATE response: " + response + "\n" );
             source.stdin.write(response + "\n");
