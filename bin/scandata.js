@@ -42,7 +42,6 @@
 // ----------------------------------------------------------------------------------------------------------
 
 
-
 // node module to handle scan data
 
 const fs     = require( 'fs' );
@@ -113,7 +112,7 @@ exports.list = function() {
     console.log( JSON.stringify( JSON.parse( JSONfn.stringify( scanobj ) ), null, 2 ) );
 }
 
-exports.setdata = function( obj, val ) {
+exports.setdata = function( obj, val, files ) {
     // obj [ p1index, p2index, .., pnidex ]
     if ( typeof obj === 'number' ) {
         obj = index2obj( obj );
@@ -124,7 +123,60 @@ exports.setdata = function( obj, val ) {
     }
     scanobj.data = scanobj.data || [];
     scanobj.data[ index(obj) ] = val;
+    if ( files ) {
+        if ( !Array.isArray( files ) ) {
+            console.error( `setdata(): files is not an aray` );
+            process.exit(-1);
+        }
+        // do the files exist?
+        if ( !files.reduce( ( p, c ) => p && fs.existsSync( c ), true ) ) {
+            console.error( `setdata(): files missing: ` + files.reduce( ( p, c ) => { fs.existsSync(c) ? 0 : p.push( c ); return p }, [] ) );
+            process.exit(-1);
+        }
+        scanobj.resultsdir = scanobj.resultsdir || uniq_results_dir();
+        // save files renamed by values & add to scanobj
+        const ext = exports.indexvalues( obj ).join( "_" );
+        const resultfiles = files.reduce(
+            (a, v) =>
+                {
+                    a[v] = `${scanobj.resultsdir}/` + v.replace( /^.*\//, '' ).replace( /(\.[a-zA-Z]*|)$/, `_${ext}$1` );
+                    return a;
+                },
+            {}
+        );
+
+        try {
+            files.map( f => {
+                fs.copyFileSync(
+                    f,
+                    resultfiles[f]
+                )
+            } );
+        } catch ( err ) {
+            console.error( `setdata(): error copying files ${err}` );
+            process.exit(-1);
+        }
+        scanobj.resultfiles = scanobj.resultfiles || [];
+        scanobj.resultfiles[ index(obj) ] = resultfiles;
+    }
 }    
+
+exports.bestfiles = function( files, n ) {
+    n = n || scanobj.datapoints;
+
+    const sdata =
+          scanobj.data
+          .map( (e, i) => { return { 'index': i, 'value': e } } )
+          .sort( (a,b) => { return a.value < b.value  ? -1 : 1; } )
+          .slice( 0, n )
+          .map( e => e.index )
+          .map( e => scanobj.resultfiles[e] )
+          .map( e => files ? files.filter( key => key in e ).reduce( (obj,key) => ( obj[key] = e[key], obj ), {} ) : e )
+    ;
+
+    // console.info( sdata );
+    return sdata;
+}
 
 exports.data = function( obj ) {
     if ( typeof obj === 'undefined' ) {
@@ -480,11 +532,19 @@ exports.contours = function( obj ) {
     return result;
 }    
 
-exports.fillints = function() {
+exports.fillints = function( files ) {
     // fill data with integers
     scanobj.data = scanobj.data || [];
     for ( let i = 0; i < scanobj.datapoints; ++i ) {
-        scanobj.data[i] = i;
+        exports.setdata( i, i, files );
+    }
+}    
+
+exports.fillrand = function( files ) {
+    // fill data with random numbers
+    scanobj.data = scanobj.data || [];
+    for ( let i = 0; i < scanobj.datapoints; ++i ) {
+        exports.setdata( i, Math.random(), files );
     }
 }    
 
@@ -578,4 +638,19 @@ const namehtmlmaps = {
     ,excluded_volume   : "Vol [&#8491;<sup>3</sup>]"
 }
 
-
+uniq_results_dir = function( prefix ) {
+    prefix = prefix || "results";
+    let ext = 1;
+    let dir = `${prefix}-${ext}`;
+    while ( fs.existsSync( dir ) ) {
+        ++ext;
+        dir = `${prefix}-${ext}`;
+    }
+    try {
+        fs.mkdirSync( dir );
+    } catch( err ) {
+        console.error( err );
+        process.exit(-1);
+    }
+    return dir;
+}
