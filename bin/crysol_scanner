@@ -70,6 +70,8 @@ const string_pdb                               = "pdb";
 
 var pdb                                        = req_original[ string_pdb ].join( " " );
 var pdbshort                                   = pdb.split('/').slice(-1).pop();
+var pdbbase                                    = pdbshort.replace( /\.pdb$/i, '');
+var runname                                    = req_original.runname;
 var expdata                                    = "";
 var expdatashort                               = "";
 
@@ -445,7 +447,8 @@ async function get_response_scan_runner(source, res, ndx_scan, maxscansteps ) {
                 dmsg( `get_response_scan_runner() : this_step ${this_step} chi2 ${chi2}\n-->chi2_scan ` + JSON.stringify( chi2_scan ) );
                 dmsg( `setdata info this_step ${this_step} chi2 value ` + ( +(chi2_scan[ chi2_scan.length - 1 ]) ) );
                 
-                this_step ? scandata.setdata( this_step - 1, +(chi2_scan[ chi2_scan.length - 1 ]) ) : '';
+                dmsg( `runname ${runname} cwd ` + process.cwd() );
+                this_step ? scandata.setdata( this_step - 1, +(chi2_scan[ chi2_scan.length - 1 ]), [ "int", "fit", "alm" ].map( e => `${runname}/CRYSOL/${pdbbase}00.${e}` ), `${runname}/results` ) : '';
                 
                 if ( temp_response[ "set_parameters" ][ "min" ] == 0 ) {
                     if ( "constant_subtractions" in req ) { 
