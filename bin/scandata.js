@@ -112,7 +112,7 @@ exports.list = function() {
     console.log( JSON.stringify( JSON.parse( JSONfn.stringify( scanobj ) ), null, 2 ) );
 }
 
-exports.setdata = function( obj, val, files ) {
+exports.setdata = function( obj, val, files, prefix ) {
     // obj [ p1index, p2index, .., pnidex ]
     if ( typeof obj === 'number' ) {
         obj = index2obj( obj );
@@ -133,9 +133,9 @@ exports.setdata = function( obj, val, files ) {
             console.error( `setdata(): files missing: ` + files.reduce( ( p, c ) => { fs.existsSync(c) ? 0 : p.push( c ); return p }, [] ) );
             process.exit(-1);
         }
-        scanobj.resultsdir = scanobj.resultsdir || uniq_results_dir();
+        scanobj.resultsdir = scanobj.resultsdir || uniq_results_dir( prefix );
         // save files renamed by values & add to scanobj
-        const ext = exports.indexvalues( obj ).join( "_" );
+        const ext = exports.indexvalues( obj, true ).join( "_" );
         const resultfiles = files.reduce(
             (a, v) =>
                 {
@@ -193,7 +193,7 @@ exports.data = function( obj ) {
     return scanobj.data[ index(obj) ];
 }    
 
-exports.indexvalues = function( obj ) {
+exports.indexvalues = function( obj, fmt ) {
     if ( typeof obj === 'undefined' ) {
         let res = [];
         for ( var i = 0; i < scanobj.datapoints; ++i ) {
@@ -211,7 +211,7 @@ exports.indexvalues = function( obj ) {
     }
     let res = [];
     for ( let i = 0; i < obj.length; ++i ) {
-        res.push( scanobj.parameters[i].val[obj[i]] );
+        res.push( fmt ? scanobj.parameters[i].format( scanobj.parameters[i].val[obj[i]] ) : scanobj.parameters[i].val[obj[i]] );
     }
         
     return res;
