@@ -39,4 +39,25 @@ exports.types =
                   }
               }
           }
+          ,sleep : {
+              interactive : false
+              ,exec       : "sleep"
+              ,params : {
+                  time : {
+                      option : ""
+                  }
+              }
+          }
+          ,ls : {
+              interactive : false
+              ,exec       : "ls"
+              ,params : {
+                  long : {
+                      option : "-l"
+                  }
+                  ,recursive : {
+                      option : "-R"
+                  }
+              }
+          }
       };
