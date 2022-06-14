@@ -20,10 +20,14 @@ let   timers  = {}; // because bigint doesn't pass JSON.stringify, could modifiy
 let   jobs    = {}; // keep data clean
 let   globals = // global values
     {
-        workers  : 3
-        ,running : 0
-        ,queue   : []
-        ,debug   : false
+        workers                    : 3
+        ,running                   : 0
+        ,complete                  : []
+        ,queue                     : []
+        ,debug                     : false
+        ,interval_message          : () => { console.log( `jobs running ${globals.running} queued ${globals.queue.length} complete ${globals.complete.length}`); }  // define as function to call on interval during running
+        //                         ^^ exposed as (global,data,jobs) => {}
+        ,interval_timer_ms         : 0      // set to milliseconds for repeat calls, zero value is disabled
     };
 
 // *** public ***
@@ -113,11 +117,23 @@ exports.dump = function() {
 run_next = function() {
     debug( 'run_next()' );
     
+    if ( globals.interval_timer_ms > 0 &&
+         typeof globals.interval_timer_id === 'undefined' &&
+         typeof globals.interval_message  === 'function' ) {
+        console.log( "--> set interval started" );
+        globals.interval_timer_id = setInterval( globals.interval_message, globals.interval_timer_ms, globals, data, jobs );
+    }
+
     if ( !globals.queue.length ) {
         if ( globals.running > 0 ) {
             debug( 'run_next() - jobs running' );
             return;
         }
+        if ( typeof globals.interval_timer_id !== 'undefined' ) {
+            console.log( "--> clear interval called" );
+            clearInterval( globals.interval_timer_id );
+        }
+
         debug( 'run_next() - queue empty' );
         if ( typeof globals.idle === 'function' ) {
             debug( 'run_next() - calling idle()' );
@@ -239,6 +255,7 @@ run_args = function( name, type, cb ) {
         data[name]._running      = false;
 
         --globals.running;
+        globals.complete.push( name );
 
         debug( `job ${name} closed code ${code} duration ${data[name].duration}` );
         json_dump( `data[${name}]`, data[name] );
