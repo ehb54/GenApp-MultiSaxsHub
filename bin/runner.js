@@ -15,14 +15,30 @@ const { PerformanceObserver, performance } = require( 'perf_hooks' );
 const JSONfn                               = require( './jsonfn.min.js' );
 const types                                = require( './runner_types.js' ).types;
 
-let   data   = {}; // main structure 
-let   timers = {}; // because bigint doesn't pass JSON.stringify, could modifiy JSONfn to support
-let   jobs   = {}; // keep data clean
+let   data    = {}; // main structure 
+let   timers  = {}; // because bigint doesn't pass JSON.stringify, could modifiy JSONfn to support
+let   jobs    = {}; // keep data clean
+let   globals = // global values
+    {
+        workers  : 3
+        ,running : 0
+        ,queue   : []
+        ,debug   : false
+    };
 
 // *** public ***
 
+exports.setglobal = function( obj ) {
+    globals = { ...globals, ...obj };
+    return globals;
+}
+
+exports.global = function() {
+    return globals;
+}
+
 exports.init = function( name, obj ) {
-    console.log( `init( ${name} )` );
+    debug( `init( ${name} )` );
     // store any data in object
 
     if ( typeof name !== 'string' ) {
@@ -50,7 +66,7 @@ exports.init = function( name, obj ) {
 }
 
 exports.set = function( name, obj ) {
-    console.log( `setup( ${name} )` );
+    debug( `setup( ${name} )` );
     // update params etc
 
     check_name( "set", name );
@@ -64,36 +80,68 @@ exports.set = function( name, obj ) {
 
     check_running( "set", name );
 
-    data[name] = {...data[name],...obj};
+    data[name] = { ...data[name], ...obj };
 
     check_type( "init", name );
 }
 
-exports.run = function( name, obj ) {
-    console.log( `run( ${name} )` );
+exports.run = function( name, cb ) {
+    debug( `run( ${name} )` );
     // run program, possibly interactively
+    // when started or complete or error, call cb
 
     check_name( "run", name );
     check_running( "run", name );
 
-    const type = types[data[name].type];
-    console.log( JSON.stringify( type, null, 2 ) );
+    globals.queue.push( { name, cb } );
 
-    type.interactive ? run_interactive( name, type ) : run_args( name, type );
+    run_next();
 }
 
 exports.get = function( name, obj ) {
-    console.log( `get( ${name} )` );
+    debug( `get( ${name} )` );
     // get various results
 }
 
 exports.dump = function() {
-    console.log( `dump()` );
-    return JSON.stringify( data, null, 2 );
+    debug( `dump()` );
+    return JSONfn.stringify( data, null, 2 );
 }
 
-
 // *** private ***
+
+run_next = function() {
+    debug( 'run_next()' );
+    
+    if ( !globals.queue.length ) {
+        if ( globals.running > 0 ) {
+            debug( 'run_next() - jobs running' );
+            return;
+        }
+        debug( 'run_next() - queue empty' );
+        if ( typeof globals.queue_empty === 'function' ) {
+            debug( 'run_next() - calling queue_empty()' );
+            return globals.queue_empty();
+        }
+        debug( 'run_next() - silent return' );
+        return;
+    }
+
+    if ( globals.running < globals.workers ) {
+        ++globals.running;
+
+        const job  = globals.queue.shift();
+        const type = types[data[job.name].type];
+
+        if ( job.cb && typeof job.cb === 'function' ) {
+            job.cb( 'start', job.name );
+        }
+
+        debug( JSONfn.stringify( type, null, 2 ) );
+
+        type.interactive ? run_interactive( job.name, type, job.cb ) : run_args( job.name, type, job.cb );
+    }
+}
 
 check_name = function( func, name ) {
     if ( typeof name !== 'string' ) {
@@ -120,11 +168,11 @@ check_running = function( func, name ) {
         console.error( `${func}( ${name} ) is running, ${func} disallowed` );
         process.exit(-1);
     }
-}
-
-run_interactive = function( name, type ) {
-    console.log( `run_interactive( ${name} )` );
-    
+    if ( globals.queue.filter( ( v ) => v.name === name ).length ) {
+        console.error( `${func}( ${name} ) is queued, ${func} disallowed` );
+        json_dump( "current queue", globals.queue );
+        process.exit(-1);
+    }
 }
 
 check_type = function( func, name ) {
@@ -139,8 +187,12 @@ check_type = function( func, name ) {
 
 }        
 
-run_args = function( name, type ) {
-    console.log( `run_args( ${name} )` );
+run_interactive = function( name, type, cb ) {
+    debug( `run_interactive( ${name} )` );
+}
+
+run_args = function( name, type, cb ) {
+    debug( `run_args( ${name} )` );
 
     // spawn style command
 
@@ -159,7 +211,7 @@ run_args = function( name, type ) {
         ).split( /\s+/ ).filter( token => token != '' );
 
 
-    console.log( JSON.stringify( args, null, 2 ) );
+    globals.debug && debug( JSONfn.stringify( args, null, 2 ) );
 
     data[name]._running         = true;
 
@@ -169,13 +221,13 @@ run_args = function( name, type ) {
     timers[name].starttime     = process.hrtime.bigint();
 
     jobs[name].stdout.on('data', (d) => {
-        console.log( `job ${name} stdout caught` );
+        debug( `job ${name} stdout caught` );
         data[name]._stdout = data[name]._stdout || '';
         data[name]._stdout += d;
     });
     
     jobs[name].stderr.on('data', (d) => {
-        console.log( `job ${name} stderr caught` );
+        debug( `job ${name} stderr caught` );
         data[name]._stderr = data[name].stderr || '';
         data[name]._stderr += d;
     });
@@ -186,17 +238,27 @@ run_args = function( name, type ) {
         data[name]._duration     = Number( timers[name].endtime - timers[name].starttime ) * 1e-9;
         data[name]._running      = false;
 
-        console.log( `job ${name} closed code ${code} duration ${data[name].duration}` );
+        --globals.running;
+
+        debug( `job ${name} closed code ${code} duration ${data[name].duration}` );
         json_dump( `data[${name}]`, data[name] );
-        console.log( data[name]._stdout );
+        debug( data[name]._stdout );
+        if ( cb && typeof cb === 'function' ) {
+            cb( 'end', name );
+        }
+        run_next();
     });
 
     jobs[name].on('error', (err) => {
-        console.log( `job ${name} running ${type.exec} emitted an error : ${err}` );
+        debug( `job ${name} running ${type.exec} emitted an error : ${err}` );
         process.exit(-1);
     });
 }
 
 json_dump = function( msg, obj ) {
-    console.log( `${msg}\n` + JSON.stringify( obj, null, 2 ) );
+    debug( `${msg}\n` + JSONfn.stringify( obj, null, 2 ) );
+}
+
+debug = function( msg ) {
+    globals.debug && debug( msg );
 }
