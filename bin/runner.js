@@ -119,9 +119,9 @@ run_next = function() {
             return;
         }
         debug( 'run_next() - queue empty' );
-        if ( typeof globals.queue_empty === 'function' ) {
-            debug( 'run_next() - calling queue_empty()' );
-            return globals.queue_empty();
+        if ( typeof globals.idle === 'function' ) {
+            debug( 'run_next() - calling idle()' );
+            return globals.idle();
         }
         debug( 'run_next() - silent return' );
         return;
@@ -134,7 +134,7 @@ run_next = function() {
         const type = types[data[job.name].type];
 
         if ( job.cb && typeof job.cb === 'function' ) {
-            job.cb( 'start', job.name );
+            job.cb( 'start', job.name, '' );
         }
 
         debug( JSONfn.stringify( type, null, 2 ) );
@@ -244,13 +244,16 @@ run_args = function( name, type, cb ) {
         json_dump( `data[${name}]`, data[name] );
         debug( data[name]._stdout );
         if ( cb && typeof cb === 'function' ) {
-            cb( 'end', name );
+            cb( 'end', name, code );
         }
         run_next();
     });
 
     jobs[name].on('error', (err) => {
         debug( `job ${name} running ${type.exec} emitted an error : ${err}` );
+        if ( cb && typeof cb === 'function' ) {
+            return cb( 'error', name, err );
+        }
         process.exit(-1);
     });
 }
