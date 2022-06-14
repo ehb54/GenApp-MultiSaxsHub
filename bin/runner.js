@@ -8,12 +8,11 @@
 
 // *** private ***
 
-const fs                                   = require( 'fs' );
-const util                                 = require( 'util' );
-const spawn                                = require( 'child_process' ).spawn;
-const { PerformanceObserver, performance } = require( 'perf_hooks' );
-const JSONfn                               = require( './jsonfn.min.js' );
-const types                                = require( './runner_types.js' ).types;
+const fs      = require( 'fs' );
+const util    = require( 'util' );
+const spawn   = require( 'child_process' ).spawn;
+const JSONfn  = require( './jsonfn.min.js' );
+const types   = require( './runner_types.js' ).types;
 
 let   data    = {}; // main structure 
 let   timers  = {}; // because bigint doesn't pass JSON.stringify, could modifiy JSONfn to support
