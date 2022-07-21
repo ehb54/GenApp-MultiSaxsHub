@@ -7,6 +7,11 @@
 #    ,"center" : "true"
     ,"centeroutput" : "true"
     ,"notify" : "email"
+    ,"dependencies" : [
+        { "base" : "ubuntu" }
+        ,{ "run-os" : [ "apt install -y nodejs npm zip libblas3 liblapack3", "cd /tmp && curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh && bash nodesource_setup.sh && apt install -y nodejs" ] }
+        ,{ "npm" : [ "js-yaml@3.13" ] }
+    ]
     ,"fields"   : [
         {
             "role"       : "input"
@@ -34,6 +39,7 @@
 # need to force copy over
 #            ,"type"       : "lrfile"
             ,"type"       : "file"
+            ,"accept"     : ".pdb"
             ,"required"   : "true"
             ,"repeater"   : "true"
             ,"help"       : "PDB input file for the complex (required)."
@@ -70,11 +76,21 @@
             "role"       : "input"
             ,"id"         : "experimental_curve"
             ,"label"      : "Input experimental curve"
-            ,"type"       : "lrfile"
+#            ,"type"       : "lrfile"
             ,"type"       : "file"
+            ,"accept"     : ".dat"
             ,"repeat"     : "set_experimental_curve"
             ,"repeater"   : "true"
             ,"help"       : "Experimental curve with q, Iq, and error of Iq"
+        }
+        ,{
+            "role"       : "input"
+            ,"id"         : "constant_subtractions"
+            ,"label"      : "Automatic background subtraction"
+            ,"type"       : "checkbox"
+            ,"checked"    : "true"
+            ,"repeat"     : "set_experimental_curve"
+            ,"help"       : "Automatically subtract a constant factor if experimental data contains a systematic error. <br>Disabled for FoXS unless set under advanced options<br>"
         }
         ,{
             "role"       : "input"
@@ -268,15 +284,6 @@
             ,"checked"    : "false"
             ,"repeat"     : "advanced_options"
             ,"help"       : "Explicit hydrogens for SAXS calculation.<br>Note WAXSiS always takes into account explicit H atoms regardless of this option."
-        }
-        ,{
-            "role"       : "input"
-            ,"id"         : "constant_subtractions"
-            ,"label"      : "Automatic background subtractions [only CRYSOL, Pepsi-SAXS, WAXSiS]"
-            ,"type"       : "checkbox"
-            ,"checked"    : "true"
-            ,"repeat"     : "advanced_options"
-            ,"help"       : "Automatically substract a constant factor if experimental data contains a systematic error. <br>For FoXS, put q value using backgrond_q after clicking background subtrations at FoXS specific option. <br>For WAXSiS, "
         }
         ,{
             "role"       : "input"
