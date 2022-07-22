@@ -15,7 +15,7 @@ const util = require('util');
 promisify = util.promisify;
 const p_exec = promisify( require( 'child_process' ).exec ) ;
 const exec = require( 'child_process' ).exec;
-const yaml = require( 'node-yaml' );
+const yaml = require( 'js-yaml' );
 const scandata = require( "./scandata.js" );
 
 const { PerformanceObserver, performance } = require('perf_hooks');
@@ -39,10 +39,23 @@ var runmode = "calc"; // if only pdb is given, "fit" if expdata is given optiona
 var upd_ip = req._udphost;
 var udp_port = req._udpport;
 
+// send_udpmsg( { _textarea : 'original input:\n' + JSON.stringify( req, null, 2 ) + '\n' });
+
+// if ( req.constant_subtractions && typeof req.set_constant_subtractions_FoXS === 'undefined' ) {
+//     req.set_constant_subtractions_FoXS = "on";
+//     if ( typeof req.const_subtractions_FoXS === 'undefined' ) {
+//         req.constant_subtractions_FoXS = "0.2";
+//     }
+// }
+
+// send_udpmsg( { _textarea : 'after cs adj:\n' + JSON.stringify( req, null, 2 ) + '\n' });
+
 //msg._uuid = req._uuid;
 
 var runlogfile = req._base_directory + "/" + runname + '/' + modulename + "_" + runname + "_" + req._base_directory.split('/').pop() + ".txt";
 var runlogfile_2 = req._base_directory + "/" + runname + '/' + modulename + "_" + runname  +  "_" + req._base_directory.split('/').pop() + "_2.txt";
+
+// fix to track FoXS background subtraction from global setting
 
 if ( "multi_model_pdb" in req ) {
     if  (!( "choose_all_models" in req )) {
@@ -1340,6 +1353,7 @@ var table = {
         //         put docker image
         //           ,"docker"    : "genapp_alphamultisaxshub:Calculations-waxsis"
         ,"docker"    : "genapp_alphamultisaxshub:Calculations-waxsis_0827_2"
+        ,"vprefix"   : "/genappdata/container_mounts/sas/rundata/multisaxshubdev/"
         ,"input" :
         {
             "pdb"  : {
@@ -1726,7 +1740,7 @@ for ( x in cmds ) {
 
 // Write command-line commands for each cmds
 for ( x in cmds ) {
-    runcmds[ x ] = "cd " + runname + " && rm -rf " + x + " && mkdir " + x +" && cd " + x + "  && cp ../../" + pdbshort + " . && " ;
+    runcmds[ x ] = "cd " + runname + " && rm -rf " + x + " ; mkdir " + x +" && cd " + x + "  && cp ../../" + pdbshort + " . && " ;
     //     runcmds[ x ] = "cd " + x + "  && cp ../" + pdbshort + " . && " ;
     if (string_expdata in req) {
         runcmds[ x ] += "cp ../../" + expdatashort + " . && " ;
@@ -1736,21 +1750,36 @@ for ( x in cmds ) {
         }
     };
 
-    // TO run in docker container 
+    
+    // TO run in docker container
+    // old docker bits
+    //             runcmds[ x ] += "docker cp " + pdbshort + " " + table[ x ].docker + ":" + docker_run_path + ". && ";
+    //runcmds[ x ] += "docker exec -it " + table[ x ].docker + " bash -c " + "'" + cmds[ x ]  + " -go '" + " > " + x + ".stdout  2> " + x + ".stderr"
+    //     if (string_expdata in req) {
+    //                 runcmds[ x ] += "docker cp " + expdatashort + " " + table[ x ].docker + ":" + docker_run_path + ". && ";
+    //      };
+    // If a container is running
+    //             runcmds[ x ] += "docker exec -i " + table[ x ].docker + " " + cmds[ x ]  + " -go " + " > " + x + ".stdout  2> " + x + ".stderr";
+    //               runcmds[ x ] += " " + table[ x ].docker + " " + cmds[ x ]  + " -go " + " > " + x + ".stdout  2> " + x + ".stderr";
+    // runcmds[ x ] += " && docker rm " + container_name;                  
+    
     if ( "docker" in table[ x ] ) {
-        if ( table[ x ].docker.lenght != 0 ) {
+        if ( table[ x ].docker.length != 0 ) {
             var container_name = "tmp_" + x + req._uuid; 
-            //             runcmds[ x ] += "docker cp " + pdbshort + " " + table[ x ].docker + ":" + docker_run_path + ". && ";
-            if (string_expdata in req) {
-                //                 runcmds[ x ] += "docker cp " + expdatashort + " " + table[ x ].docker + ":" + docker_run_path + ". && ";
-            };
-            //runcmds[ x ] += "docker exec -it " + table[ x ].docker + " bash -c " + "'" + cmds[ x ]  + " -go '" + " > " + x + ".stdout  2> " + x + ".stderr"
-            // If a container is running
-            //             runcmds[ x ] += "docker exec -i " + table[ x ].docker + " " + cmds[ x ]  + " -go " + " > " + x + ".stdout  2> " + x + ".stderr";
-            runcmds[ x ] += "docker run -i --name " + container_name + " -v " + req._base_directory + "/" + runname + "/" + x + ":" + docker_run_path ; 
-            //               runcmds[ x ] += " " + table[ x ].docker + " " + cmds[ x ]  + " -go " + " > " + x + ".stdout  2> " + x + ".stderr";
-            runcmds[ x ] += " --user www-data:www-data " + table[ x ].docker + " " + cmds[ x ]  + " -go " + " > " + x + ".stdout  2> " + x + ".stderr";
-            runcmds[ x ] += " && docker rm " + container_name;                  
+            runcmds[ x ] +=
+                "ssh host docker run -i "
+                + "--rm "
+                + "--name "
+                + container_name
+                + " -v " + table[ x ].vprefix
+                + req._base_directory.replace( /^.*\/results/, 'results' ) + "/" + runname + "/" + x + ":" + docker_run_path
+                + " --user www-data:www-data "
+                + table[ x ].docker + " "
+                + cmds[ x ]
+                + " -go "
+                + "> " + x + ".stdout "
+                + "2> " + x + ".stderr"
+            ;
         } else {
             runcmds[ x ] +=  cmds[ x ]  + " > " + x + ".stdout  2> " + x + ".stderr";
         };
@@ -2601,6 +2630,8 @@ async function do_exec( x ) {
     } else {
         var x_startTime = performance.now();
         send_udpmsg( { _textarea : "Starting " + x + " job\n" } );
+        // send_udpmsg( { _textarea : `${runcmds[x]}\n`  } );
+        // send_udpmsg( { _textarea : `req._base_directory ${req._base_directory}\n`} );
 
         var result = await p_exec( runcmds[ x ] );
         var x_exeTime = (Number.parseInt(performance.now() - x_startTime))/1000;
@@ -2968,13 +2999,13 @@ async function taskRunner(fn, label) {
                     res.chi2_2D_CRYSOL = scandata.contours( [ 'contrast_hydration', 'excluded_volume' ] );
                 }
             }
-
+            
             console.log(JSON.stringify(res));
-            ;}
+        }
     } 
     catch (err) {
         res._textarea += "Error : " + err.message + "\n";
-        console.log(res);
+        console.log(JSON.stringify(res));
     }
 }
 
