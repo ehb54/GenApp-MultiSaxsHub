@@ -202,10 +202,6 @@ check_type = function( func, name ) {
 
 }        
 
-run_interactive = function( name, type, cb ) {
-    debug( `run_interactive( ${name} )` );
-}
-
 run_args = function( name, type, cb ) {
     debug( `run_args( ${name} )` );
 
@@ -226,7 +222,8 @@ run_args = function( name, type, cb ) {
         ).split( /\s+/ ).filter( token => token != '' );
 
 
-    globals.debug && debug( JSONfn.stringify( args, null, 2 ) );
+    debug( JSONfn.stringify( args, null, 2 ) );
+    debug( `cmd:\n---\n${type.exec} ` + args.join( ' ' ) + `\n---\n` );
 
     data[name]._running         = true;
 
@@ -236,7 +233,7 @@ run_args = function( name, type, cb ) {
     timers[name].starttime     = process.hrtime.bigint();
 
     jobs[name].stdout.on('data', (d) => {
-        debug( `job ${name} stdout caught` );
+        debug( `job ${name} stdout caught\n---\n${d}\n---\n` );
         data[name]._stdout = data[name]._stdout || '';
         data[name]._stdout += d;
     });
@@ -279,5 +276,81 @@ json_dump = function( msg, obj ) {
 }
 
 debug = function( msg ) {
-    globals.debug && debug( msg );
+    globals.debug && console.log( msg );
 }
+
+run_interactive = function( name, type, cb ) {
+    debug( `run_interactive( ${name} )` );
+    // spawn style command
+
+    let args =
+        type.interactive ? [] :
+        ( 
+            // parameters
+            Object.keys( data[name] )
+                .reduce( ( accum, val ) => 
+                         type.params[val] && typeof type.params[val].option != 'undefined' ?
+                         `${accum} ${type.params[val].option} ${data[name][val]}` : accum
+                         ,'' )
+            // pdb file
+                + ` ${data[name].pdb}`
+            // optional dat file
+                + ( data[name].dat ? ` ${data[name].dat}` : '' )
+        ).split( /\s+/ ).filter( token => token != '' );
+
+
+    // build up response data from _presets and values
+    // string -> value
+    // then in stdout.on, find matching line (might need splits etc) and send response
+
+
+    debug( JSONfn.stringify( args, null, 2 ) );
+    debug( `cmd:\n---\n${type.exec} ` + args.join( ' ' ) + `\n---\n` );
+
+    data[name]._running         = true;
+
+    jobs[name]                 = spawn( type.exec, args );
+
+    timers[name]               = timers[name] || {};
+    timers[name].starttime     = process.hrtime.bigint();
+
+    jobs[name].stdout.on('data', (d) => {
+        debug( `job ${name} stdout caught\n---\n${d}\n---\n` );
+        data[name]._stdout = data[name]._stdout || '';
+        data[name]._stdout += d;
+    });
+    
+    jobs[name].stderr.on('data', (d) => {
+        debug( `job ${name} stderr caught` );
+        data[name]._stderr = data[name].stderr || '';
+        data[name]._stderr += d;
+    });
+    
+    jobs[name].on('close', (code) => {
+        timers[name].endtime     = process.hrtime.bigint();
+        data[name]._exitcode     = code;
+        data[name]._duration     = Number( timers[name].endtime - timers[name].starttime ) * 1e-9;
+        data[name]._running      = false;
+
+        --globals.running;
+        globals.complete.push( name );
+
+        debug( `job ${name} closed code ${code} duration ${data[name].duration}` );
+        json_dump( `data[${name}]`, data[name] );
+        debug( data[name]._stdout );
+        if ( cb && typeof cb === 'function' ) {
+            cb( 'end', name, code );
+        }
+        run_next();
+    });
+
+    jobs[name].on('error', (err) => {
+        debug( `job ${name} running ${type.exec} emitted an error : ${err}` );
+        if ( cb && typeof cb === 'function' ) {
+            return cb( 'error', name, err );
+        }
+        process.exit(-1);
+    });
+
+}
+
