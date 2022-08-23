@@ -6,27 +6,29 @@
 // supported runner types, e.g. crysol, etc.
 // ----------------------------------------------------------------------------------------------------------
 
+// n.b. interactive params are used as regex and need proper escaping
+
 exports.types = 
       {
           crysol : {
               interactive : true
               ,exec       : "/opt/genapp/multisaxshubdev/bin/crysolcmd"
               ,params : {
-                  _presets: {
-                      " Plot the fit [ Y / N ] ................. <          Yes >: " : "_EOF"
-                      ," Enter your option ...................... <            0 >: " : "\n"
-                  }
-                  ,pdb                 : " Brookhaven file name ................... <         .pdb >: "
-                  ,harmonics           : "  Maximum order of  harmonics ........... <           15 >: "
-                  ,fibgrid             : "  Order of Fibonacci grid ............... <           18 >: "
-                  ,maxsval             : " Maximum s value ........................ <        1.000 >: "
-                  ,qpoints             : " Number of points ....................... <          101 >: "
-                  ,explicit_hydrogens  : " Account for explicit hydrogens? [ Y / N ] <           No >: "
-                  ,fit_exp_curve       : "  Fit the experimental curve [ Y / N ] .. <          Yes >: "
-                  ,exp_curve_dat       : " Enter data file ........................ <         .dat >: "
-                  ,background_subtract : " Subtract constant ...................... <           no >: "
-                  ,angular_units       : " 2 *  sin(theta)/lambda [1/nm]  (4) ..... <            1 >: "
-                  ,drho                : " Electron density of the solvent, e/A**3  <        .3340 >: "
+                  pdb                 : " Brookhaven file name \\.+ < \\s*\\S+ >: "
+                  ,harmonics           : "  Maximum order of  harmonics \\.+ < \\s*\\S+ >: "
+                  ,fibgrid             : "  Order of Fibonacci grid \\.+ < \\s*\\S+ >: "
+                  ,maxsval             : " Maximum s value \\.+ < \\s*\\S+ >: "
+                  ,qpoints             : " Number of points \\.+ < \\s*\\S+ >: "
+                  ,explicit_hydrogens  : " Account for explicit hydrogens.* < \\s*\\S+ >: "
+                  ,fit_exp_curve       : "  Fit the experimental curve [ Y / N ] \\.+ < \\s*\\S+ >: "
+                  ,dat                 : " Enter data file \\.+ < \\s*\\S+ >: "
+                  ,background_subtract : " Subtract constant \\.+ < \\s*\\S+ >: "
+                  ,angular_units       : " 2 \\*  sin\\(theta\\)/lambda \\[1/nm\\]  \\(4\\) \\.+ < \\s*\\S+ >: "
+                  ,drho                : " Electron density of the solvent, e/A\\*\\*3  < \\s*\\S+ >: "
+              }
+              ,presets: {
+                  " Plot the fit \\[ Y / N \\] \\.+ < \\s*\\S+ >: " : "_EOF"
+                  ," Enter your option \\.+ < \\s*\\S+ >: " : "\n"
               }
           }
           ,foxs : {
