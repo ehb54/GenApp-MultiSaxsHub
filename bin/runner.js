@@ -303,9 +303,31 @@ run_interactive = function( name, type, cb ) {
     // string -> value
     // then in stdout.on, find matching line (might need splits etc) and send response
 
-
     debug( JSONfn.stringify( args, null, 2 ) );
     debug( `cmd:\n---\n${type.exec} ` + args.join( ' ' ) + `\n---\n` );
+
+    const response_presets = type.presets || {};
+
+    debug( `response_presets object:\n---\n` + JSON.stringify( response_presets, null, 2 ) + '\n---\n' );
+
+    const response_params =
+        Object.fromEntries( 
+            Object.keys( type.params )
+                .flatMap(
+                    ( v ) => 
+                        data[name][v] ?
+                        [ { [type.params[v]] : `${data[name][v]}\n` } ] : []
+                    ,[]
+                )
+                .flatMap(Object.entries)
+        )
+    ;
+                                                            
+    debug( `response_params object:\n---\n` + JSON.stringify( response_params, null, 2 ) + '\n---\n' );
+
+    let responses = { ...response_presets, ...response_params };
+    
+    debug( `responses object:\n---\n` + JSON.stringify( responses, null, 2 ) + '\n---\n' );
 
     data[name]._running         = true;
 
@@ -314,10 +336,29 @@ run_interactive = function( name, type, cb ) {
     timers[name]               = timers[name] || {};
     timers[name].starttime     = process.hrtime.bigint();
 
+    jobs[name].stdin.setEncoding('utf-8');
+
     jobs[name].stdout.on('data', (d) => {
         debug( `job ${name} stdout caught\n---\n${d}\n---\n` );
         data[name]._stdout = data[name]._stdout || '';
         data[name]._stdout += d;
+        Object.keys( responses ).some( (k) => {
+            let rx = new RegExp( k, 'm' );
+            if ( rx.test( d ) ) {
+                console.log( `key ${k} match found, write response ${responses[k]}\n` );
+                jobs[name].stdin.write(responses[k]);
+                return true;
+            } else {
+//                console.log( `key ${k} does not match` );
+                return false;
+            }
+                
+//            rx.test( d ) ?
+//                {
+//                    console.log( `found match\ncould write response ${responses[k]}\n` );
+//                    return true;
+//                } : return false;
+        });
     });
     
     jobs[name].stderr.on('data', (d) => {
