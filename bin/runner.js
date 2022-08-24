@@ -315,8 +315,7 @@ run_interactive = function( name, type, cb ) {
             Object.keys( type.params )
                 .flatMap(
                     ( v ) => 
-                        data[name][v] ?
-                        [ { [type.params[v]] : `${data[name][v]}\n` } ] : []
+                        [ { [type.params[v]] : data[name][v] ? `${data[name][v]}` : '' } ]
                     ,[]
                 )
                 .flatMap(Object.entries)
@@ -335,7 +334,7 @@ run_interactive = function( name, type, cb ) {
 
     timers[name]               = timers[name] || {};
     timers[name].starttime     = process.hrtime.bigint();
-
+    
     jobs[name].stdin.setEncoding('utf-8');
 
     jobs[name].stdout.on('data', (d) => {
@@ -345,19 +344,18 @@ run_interactive = function( name, type, cb ) {
         Object.keys( responses ).some( (k) => {
             let rx = new RegExp( k, 'm' );
             if ( rx.test( d ) ) {
-                console.log( `key ${k} match found, write response ${responses[k]}\n` );
-                jobs[name].stdin.write(responses[k]);
+                // console.log( `key ${k} match found, write response ${responses[k]}` );
+                let response = Array.isArray( responses[k] ) ?
+                    ( responses[k].length > 1 ? responses[k].shift() : responses[k][0] ) :
+                    responses[k];
+                    
+                debug( `Response: ${d} ${response}` );
+                jobs[name].stdin.write(`${response}\n`);
                 return true;
             } else {
-//                console.log( `key ${k} does not match` );
+                // console.log( `key ${k} does not match` );
                 return false;
             }
-                
-//            rx.test( d ) ?
-//                {
-//                    console.log( `found match\ncould write response ${responses[k]}\n` );
-//                    return true;
-//                } : return false;
         });
     });
     

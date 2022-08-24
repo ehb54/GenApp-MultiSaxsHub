@@ -9,7 +9,7 @@ runner.setglobal(
         workers            : 2
         ,debug             : true
         ,idle              : () => console.log( '--> workers are idle' )
-        ,interval_timer_ms : 1000
+        ,interval_timer_ms : 5000
         ,interval_message  : ( globals ) => { console.log( `--> jobs running ${globals.running} queued ${globals.queue.length} complete ${globals.complete.length}`); }
     });
 
@@ -27,9 +27,18 @@ runner.init( "foxs",
 
 runner.init( "crysol",
              {
-                 type    : "crysol"
-                 ,pdb    : "1HEL.pdb"
-                 ,dat    : "lyzexp.dat"
+                 type                 : "crysol"
+                 ,pdb                 : "1HEL.pdb"
+                 ,dat                 : "lyzexp.dat"
+                 ,harmonics           : 18
+                 ,fibgrid             : 200
+                 ,maxsval             : 1.2
+                 ,qpoints             : 150
+                 ,explicit_hydrogens  : "N"
+                 ,fit_exp_curve       : "Y"
+                 ,ra                  : 1.5
+                 ,vol                 : 17667
+                 ,drho                : 0.02
              }
            );
 

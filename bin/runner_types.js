@@ -20,15 +20,21 @@ exports.types =
                   ,maxsval             : " Maximum s value \\.+ < \\s*\\S+ >: "
                   ,qpoints             : " Number of points \\.+ < \\s*\\S+ >: "
                   ,explicit_hydrogens  : " Account for explicit hydrogens.* < \\s*\\S+ >: "
-                  ,fit_exp_curve       : "  Fit the experimental curve [ Y / N ] \\.+ < \\s*\\S+ >: "
+                  ,fit_exp_curve       : "  Fit the experimental curve \\[ Y / N \\] \\.+ < \\s*\\S+ >: "
                   ,dat                 : " Enter data file \\.+ < \\s*\\S+ >: "
                   ,background_subtract : " Subtract constant \\.+ < \\s*\\S+ >: "
                   ,angular_units       : " 2 \\*  sin\\(theta\\)/lambda \\[1/nm\\]  \\(4\\) \\.+ < \\s*\\S+ >: "
-                  ,drho                : " Electron density of the solvent, e/A\\*\\*3  < \\s*\\S+ >: "
+                  ,drho                : " ((Minimum|Maximum) contrast in the shell|Contrast of the solvation shell) \\.+ < \\s*\\S+ >: "
+                  ,solvent_density     : " Electron density of the solvent, e/A\\*\\*3  < \\s*\\S+ >: "
+                  ,ra                  : " ((Minimum|Maximum) radius of atomic group|Average atomic radius) \\.+ < \\s*\\S+ >: "
+                  ,vol                 : " ((Minimum|Maximum) excluded volume|Excluded Volume) \\.+ < \\s*\\S+ >: "
               }
               ,presets: {
-                  " Plot the fit \\[ Y / N \\] \\.+ < \\s*\\S+ >: " : "_EOF"
-                  ," Enter your option \\.+ < \\s*\\S+ >: " : "\n"
+                  " Plot the fit \\[ Y / N \\] \\.+ < \\s*\\S+ >: " : "n"
+                  ," Another set of parameters \\[ Y / N \\] \\.+ < \\s*\\S+ >: " : [ "y", "n" ]
+                  ," Minimize again with new limits \\[ Y / N \\] < \\s*\\S+ >: " : "y"
+                  ," Enter your option \\.+ < \\s*\\S+ >: " : ""
+                  ," Smax in the fitting range \\.+ < \\s*\\S+ >: " : ""
               }
           }
           ,foxs : {
