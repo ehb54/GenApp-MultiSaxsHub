@@ -29,13 +29,13 @@ runner.init( "crysol",
              {
                  type                 : "crysol"
                  ,pdb                 : "1HEL.pdb"
-                 ,dat                 : "lyzexp.dat"
+//                 ,dat                 : "lyzexp.dat"
                  ,harmonics           : 18
                  ,fibgrid             : 200
                  ,maxsval             : 1.2
                  ,qpoints             : 150
                  ,explicit_hydrogens  : "N"
-                 ,fit_exp_curve       : "Y"
+                 ,fit_exp_curve       : "N"
                  ,ra                  : 1.5
                  ,vol                 : 17667
                  ,drho                : 0.02

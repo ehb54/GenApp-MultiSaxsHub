@@ -279,9 +279,33 @@ debug = function( msg ) {
     globals.debug && console.log( msg );
 }
 
+apply_fallbacks = function( name, type ) {
+    // apply fallbacks if present
+    debug( `apply_fallbacks( ${name}, type )` );
+
+    debug( `data[${name}] object original:\n---\n` + JSON.stringify( data[name], null, 2 ) + '\n---\n' );
+
+    if ( !type.fallback ) {
+        debug( `apply_fallbacks() - no fallbacks defined` );
+        return;
+    }
+
+    Object.keys( type.fallback ).map( ( v ) => {
+        if ( ! ( v in data[name] )
+             && type.fallback[v] in data[name]
+           ) {
+            data[name][v] = data[name][type.fallback[v]];
+        }
+    });
+
+    debug( `data[${name}] object after fallback:\n---\n` + JSON.stringify( data[name], null, 2 ) + '\n---\n' );
+}
+
 run_interactive = function( name, type, cb ) {
     debug( `run_interactive( ${name} )` );
     // spawn style command
+
+    apply_fallbacks( name, type );
 
     let args =
         type.interactive ? [] :

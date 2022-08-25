@@ -24,10 +24,16 @@ exports.types =
                   ,dat                 : " Enter data file \\.+ < \\s*\\S+ >: "
                   ,background_subtract : " Subtract constant \\.+ < \\s*\\S+ >: "
                   ,angular_units       : " 2 \\*  sin\\(theta\\)/lambda \\[1/nm\\]  \\(4\\) \\.+ < \\s*\\S+ >: "
-                  ,drho                : " ((Minimum|Maximum) contrast in the shell|Contrast of the solvation shell) \\.+ < \\s*\\S+ >: "
                   ,solvent_density     : " Electron density of the solvent, e/A\\*\\*3  < \\s*\\S+ >: "
-                  ,ra                  : " ((Minimum|Maximum) radius of atomic group|Average atomic radius) \\.+ < \\s*\\S+ >: "
-                  ,vol                 : " ((Minimum|Maximum) excluded volume|Excluded Volume) \\.+ < \\s*\\S+ >: "
+                  ,ra                  : " Average atomic radius \\.+ < \\s*\\S+ >: "
+                  ,ra_min              : " Minimum radius of atomic group \\.+ < \\s*\\S+ >: "
+                  ,ra_max              : " Maximum radius of atomic group \\.+ < \\s*\\S+ >: "
+                  ,drho                : " Contrast of the solvation shell \\.+ < \\s*\\S+ >: "
+                  ,drho_min            : " Minimum contrast in the shell \\.+ < \\s*\\S+ >: "
+                  ,drho_max            : " Maximum contrast in the shell \\.+ < \\s*\\S+ >: "
+                  ,vol                 : " Excluded Volume \\.+ < \\s*\\S+ >: "
+                  ,vol_min             : " Minimum excluded volume \\.+ < \\s*\\S+ >: "
+                  ,vol_max             : " Maximum excluded volume \\.+ < \\s*\\S+ >: "
               }
               ,presets: {
                   " Plot the fit \\[ Y / N \\] \\.+ < \\s*\\S+ >: " : "n"
@@ -36,6 +42,17 @@ exports.types =
                   ," Enter your option \\.+ < \\s*\\S+ >: " : ""
                   ," Smax in the fitting range \\.+ < \\s*\\S+ >: " : ""
               }
+              // fallback values to populate if not provided
+              ,fallback: {
+                  ra_min     : "ra"
+                  ,ra_max     : "ra"
+                  ,drho_min   : "drho"
+                  ,drho_max   : "drho"
+                  ,vol_min    : "vol"
+                  ,vol_max    : "vol"
+              }
+              // required parameters
+              ,required: []
           }
           ,foxs : {
               interactive : false
